@@ -20,14 +20,21 @@ namespace Chainbots
         private readonly Toolbar toolbar;
         private readonly List<DemoHexBlock> demoBlocks;
         private readonly FreeDraw freeDraw;
+        private readonly List<ChainStructure> chainStructures;
+        private readonly List<Chainbot> chainbots;
+        private readonly List<PhysicsBlock> environmentBlocks;
         private readonly float hexSize = 30f;
         private bool isSimulationRunning = false;
         private DemoHexBlock? draggedBlock = null;
+        private PhysicsBlock? draggedPhysicsBlock = null;
+        private ChainStructure? draggedBlockStructure = null;
+        private Chainbot? draggedChainbot = null;
         private float dragOffsetX = 0f;
         private float dragOffsetY = 0f;
         private float canvasScaleX = 1f;
         private float canvasScaleY = 1f;
         private bool isFreeDrawing = false;
+        private bool physicsEnabled = true;
 
         public MainWindow()
         {
@@ -41,15 +48,27 @@ namespace Chainbots
             // Initialize demo blocks list
             demoBlocks = new List<DemoHexBlock>();
 
+            // Initialize chain structures list
+            chainStructures = new List<ChainStructure>();
+
+            // Initialize chainbots list
+            chainbots = new List<Chainbot>();
+
+            // Initialize environment blocks list
+            environmentBlocks = new List<PhysicsBlock>();
+
             // Initialize free draw
             freeDraw = new FreeDraw();
 
             // Initialize toolbar
             toolbar = new Toolbar();
-            toolbar.AddButton("Start", OnStartSimulation);
-            toolbar.AddButton("Stop", OnStopSimulation);
+            toolbar.AddButton("Start Sim", OnStartSimulation);
+            toolbar.AddButton("Stop Sim", OnStopSimulation);
             toolbar.AddButton("Reset", OnResetSimulation);
-            toolbar.AddButton("Add Block", OnAddDemoBlock);
+            toolbar.AddButton("Add Chainbot", OnAddChainbot);
+            toolbar.AddButton("Add Ground", OnAddEnvironmentBlock);
+            toolbar.AddButton("Attach Leg (A)", OnAttachLeg);
+            toolbar.AddButton("Detach Leg (D)", OnDetachLeg);
             toolbar.AddButton("Clear Draw", OnClearFreeDraw);
 
             // Wire up mouse events
@@ -58,6 +77,9 @@ namespace Chainbots
             skiaCanvas.MouseLeftButtonUp += OnCanvasMouseUp;
             skiaCanvas.MouseRightButtonDown += OnCanvasMouseRightDown;
             skiaCanvas.MouseWheel += OnCanvasMouseWheel;
+            
+            // Wire up keyboard events
+            this.KeyDown += OnKeyDown;
 
             // Set up render loop (60 FPS target)
             renderTimer = new DispatcherTimer
@@ -111,6 +133,9 @@ namespace Chainbots
         {
             isSimulationRunning = false;
             materialMesh.Clear();
+            chainStructures.Clear();
+            chainbots.Clear();
+            environmentBlocks.Clear();
             // Reset to initial state
             for (int q = -2; q <= 2; q++)
             {
@@ -122,6 +147,76 @@ namespace Chainbots
                     }
                 }
             }
+        }
+
+        private void OnAddChainbot()
+        {
+            // Add a chainbot at center of screen
+            float centerX = (float)skiaCanvas.ActualWidth / 2f * canvasScaleX;
+            float centerY = (float)skiaCanvas.ActualHeight / 2f * canvasScaleY + 50f;
+            var bot = new Chainbot($"Bot-{chainbots.Count + 1}", centerX, centerY, hexSize);
+            chainbots.Add(bot);
+        }
+
+        private void OnAddEnvironmentBlock()
+        {
+            // Add an environment block (ground) at center of screen
+            float centerX = (float)skiaCanvas.ActualWidth / 2f * canvasScaleX;
+            float centerY = (float)skiaCanvas.ActualHeight / 2f * canvasScaleY;
+            var block = new PhysicsBlock(centerX, centerY, hexSize, SKColor.Parse("#95A5A6"), isStatic: true);
+            environmentBlocks.Add(block);
+        }
+
+        private void OnAttachLeg()
+        {
+            // Find the first chainbot with a selected leg
+            foreach (var bot in chainbots)
+            {
+                if (bot.SelectedLeg != null && !bot.SelectedLeg.IsAttached)
+                {
+                    // Find closest environment block
+                    var closestBlock = FindClosestEnvironmentBlock(bot.SelectedLeg.Block);
+                    if (closestBlock != null)
+                    {
+                        bot.AttachLeg(bot.SelectedLeg, closestBlock);
+                    }
+                    break;
+                }
+            }
+        }
+
+        private void OnDetachLeg()
+        {
+            // Find the first chainbot with a selected leg
+            foreach (var bot in chainbots)
+            {
+                if (bot.SelectedLeg != null && bot.SelectedLeg.IsAttached)
+                {
+                    bot.DetachLeg(bot.SelectedLeg);
+                    break;
+                }
+            }
+        }
+
+        private PhysicsBlock? FindClosestEnvironmentBlock(PhysicsBlock reference)
+        {
+            PhysicsBlock? closest = null;
+            float closestDist = float.MaxValue;
+
+            foreach (var block in environmentBlocks)
+            {
+                float dx = block.X - reference.X;
+                float dy = block.Y - reference.Y;
+                float dist = dx * dx + dy * dy;
+
+                if (dist < closestDist && dist < 10000f) // Only consider blocks within reasonable range
+                {
+                    closestDist = dist;
+                    closest = block;
+                }
+            }
+
+            return closest;
         }
 
         private void OnAddDemoBlock()
@@ -137,6 +232,42 @@ namespace Chainbots
         private void OnClearFreeDraw()
         {
             freeDraw.Clear();
+        }
+
+        private void OnKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            // A key - Attach selected leg
+            if (e.Key == System.Windows.Input.Key.A)
+            {
+                OnAttachLeg();
+                skiaCanvas.InvalidateVisual();
+            }
+            // D key - Detach selected leg
+            else if (e.Key == System.Windows.Input.Key.D)
+            {
+                OnDetachLeg();
+                skiaCanvas.InvalidateVisual();
+            }
+            // Tab key - Cycle selected leg
+            else if (e.Key == System.Windows.Input.Key.Tab)
+            {
+                foreach (var bot in chainbots)
+                {
+                    if (bot.SelectedLeg == bot.LeftLeg)
+                    {
+                        bot.SelectedLeg = bot.RightLeg;
+                    }
+                    else if (bot.SelectedLeg == bot.RightLeg)
+                    {
+                        bot.SelectedLeg = null;
+                    }
+                    else
+                    {
+                        bot.SelectedLeg = bot.LeftLeg;
+                    }
+                }
+                skiaCanvas.InvalidateVisual();
+            }
         }
 
         private void OnCanvasMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
@@ -160,6 +291,13 @@ namespace Chainbots
                 freeDraw.ContinuePath(mouseX, mouseY);
                 needsRedraw = true;
             }
+            // Handle physics block dragging
+            else if (draggedPhysicsBlock != null)
+            {
+                draggedPhysicsBlock.X = mouseX - dragOffsetX;
+                draggedPhysicsBlock.Y = mouseY - dragOffsetY;
+                needsRedraw = true;
+            }
             // Handle demo block dragging
             else if (draggedBlock != null)
             {
@@ -169,6 +307,44 @@ namespace Chainbots
             }
             else
             {
+                // Update hover state for chainbots
+                bool anyChainbotHovered = false;
+                foreach (var bot in chainbots)
+                {
+                    if (bot.UpdateHoverState(mouseX, mouseY))
+                    {
+                        anyChainbotHovered = true;
+                        needsRedraw = true;
+                    }
+                }
+
+                // Update hover state for environment blocks
+                bool anyEnvBlockHovered = false;
+                foreach (var block in environmentBlocks)
+                {
+                    bool wasHovered = block.IsHovered;
+                    block.IsHovered = block.Contains(mouseX, mouseY);
+                    if (block.IsHovered)
+                    {
+                        anyEnvBlockHovered = true;
+                    }
+                    if (wasHovered != block.IsHovered)
+                    {
+                        needsRedraw = true;
+                    }
+                }
+
+                // Update hover state for physics blocks
+                bool anyPhysicsHovered = false;
+                foreach (var structure in chainStructures)
+                {
+                    if (structure.UpdateHoverState(mouseX, mouseY))
+                    {
+                        anyPhysicsHovered = true;
+                        needsRedraw = true;
+                    }
+                }
+
                 // Update hover state for demo blocks
                 bool anyHovered = false;
                 foreach (var block in demoBlocks)
@@ -192,7 +368,7 @@ namespace Chainbots
                 }
                 else
                 {
-                    skiaCanvas.Cursor = anyHovered ? System.Windows.Input.Cursors.Hand : System.Windows.Input.Cursors.Arrow;
+                    skiaCanvas.Cursor = (anyHovered || anyPhysicsHovered || anyChainbotHovered || anyEnvBlockHovered) ? System.Windows.Input.Cursors.Hand : System.Windows.Input.Cursors.Arrow;
                 }
             }
 
@@ -227,6 +403,78 @@ namespace Chainbots
                 return;
             }
 
+            // Check if clicking on a chainbot (iterate backwards)
+            for (int i = chainbots.Count - 1; i >= 0; i--)
+            {
+                var bot = chainbots[i];
+                var block = bot.GetBlockAt(mouseX, mouseY);
+                if (block != null)
+                {
+                    // Check if clicking on a leg to select it
+                    var leg = bot.GetLegAt(mouseX, mouseY);
+                    if (leg != null)
+                    {
+                        bot.SelectedLeg = leg;
+                    }
+                    
+                    draggedPhysicsBlock = block;
+                    draggedChainbot = bot;
+                    dragOffsetX = mouseX - block.X;
+                    dragOffsetY = mouseY - block.Y;
+                    block.IsDragging = true;
+                    
+                    // Move bot to top of list (render last = on top)
+                    chainbots.RemoveAt(i);
+                    chainbots.Add(bot);
+                    
+                    skiaCanvas.InvalidateVisual();
+                    return;
+                }
+            }
+
+            // Check if clicking on an environment block
+            for (int i = environmentBlocks.Count - 1; i >= 0; i--)
+            {
+                var block = environmentBlocks[i];
+                if (block.Contains(mouseX, mouseY))
+                {
+                    draggedPhysicsBlock = block;
+                    dragOffsetX = mouseX - block.X;
+                    dragOffsetY = mouseY - block.Y;
+                    block.IsDragging = true;
+                    
+                    // Move to top of list (render last = on top)
+                    environmentBlocks.RemoveAt(i);
+                    environmentBlocks.Add(block);
+                    
+                    skiaCanvas.InvalidateVisual();
+                    return;
+                }
+            }
+
+            // Check if clicking on a physics block (iterate structures backwards)
+            for (int i = chainStructures.Count - 1; i >= 0; i--)
+            {
+                var structure = chainStructures[i];
+                var block = structure.FindBlockAt(mouseX, mouseY);
+                if (block != null)
+                {
+                    draggedPhysicsBlock = block;
+                    draggedBlockStructure = structure;
+                    dragOffsetX = mouseX - block.X;
+                    dragOffsetY = mouseY - block.Y;
+                    block.IsDragging = true;
+                    
+                    // Move structure to top of list (render last = on top)
+                    chainStructures.RemoveAt(i);
+                    chainStructures.Add(structure);
+                    structure.BringToFront(block);
+                    
+                    skiaCanvas.InvalidateVisual();
+                    return;
+                }
+            }
+
             // Check if clicking on a demo block (iterate backwards to get topmost)
             for (int i = demoBlocks.Count - 1; i >= 0; i--)
             {
@@ -253,6 +501,47 @@ namespace Chainbots
             {
                 freeDraw.EndPath();
                 isFreeDrawing = false;
+                skiaCanvas.InvalidateVisual();
+            }
+            else if (draggedPhysicsBlock != null)
+            {
+                draggedPhysicsBlock.IsDragging = false;
+                
+                // Snap to grid if Shift key is held
+                if (System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.LeftShift) || 
+                    System.Windows.Input.Keyboard.IsKeyDown(System.Windows.Input.Key.RightShift))
+                {
+                    if (draggedBlockStructure != null)
+                    {
+                        draggedBlockStructure.SnapBlockToGrid(draggedPhysicsBlock, hexSize);
+                    }
+                    // Snap environment blocks to grid too
+                    else if (environmentBlocks.Contains(draggedPhysicsBlock))
+                    {
+                        // Convert pixel position to hex coordinate
+                        float sqrt3 = 1.73205080757f;
+                        float q = (sqrt3 / 3f * draggedPhysicsBlock.X - 1f / 3f * draggedPhysicsBlock.Y) / hexSize;
+                        float r = (2f / 3f * draggedPhysicsBlock.Y) / hexSize;
+
+                        // Round to nearest integer hex coordinate
+                        int hexQ = (int)Math.Round(q);
+                        int hexR = (int)Math.Round(r);
+
+                        // Convert back to pixel position
+                        float snapX = hexSize * (sqrt3 * hexQ + sqrt3 / 2f * hexR);
+                        float snapY = hexSize * (3f / 2f * hexR);
+
+                        draggedPhysicsBlock.X = snapX;
+                        draggedPhysicsBlock.Y = snapY;
+                        draggedPhysicsBlock.VelocityX = 0;
+                        draggedPhysicsBlock.VelocityY = 0;
+                        draggedPhysicsBlock.AngularVelocity = 0;
+                    }
+                }
+                
+                draggedPhysicsBlock = null;
+                draggedBlockStructure = null;
+                draggedChainbot = null;
                 skiaCanvas.InvalidateVisual();
             }
             else if (draggedBlock != null)
@@ -309,6 +598,25 @@ namespace Chainbots
 
         private void RenderFrame(object? sender, EventArgs e)
         {
+            // Calculate delta time
+            DateTime currentTime = DateTime.Now;
+            float deltaTime = (float)(currentTime - lastFrameTime).TotalSeconds;
+            lastFrameTime = currentTime;
+
+            // Update physics if simulation is running
+            if (isSimulationRunning && physicsEnabled)
+            {
+                foreach (var structure in chainStructures)
+                {
+                    structure.Update(deltaTime, constraintIterations: 10);
+                }
+                
+                foreach (var bot in chainbots)
+                {
+                    bot.Update(deltaTime, constraintIterations: 10);
+                }
+            }
+
             // Invalidate the canvas to trigger a redraw
             skiaCanvas.InvalidateVisual();
         }
@@ -341,6 +649,24 @@ namespace Chainbots
 
             // Restore canvas state
             canvas.Restore();
+
+            // Render environment blocks (in screen space, after restore)
+            foreach (var block in environmentBlocks)
+            {
+                block.Render(canvas);
+            }
+
+            // Render chain structures (in screen space, after restore)
+            foreach (var structure in chainStructures)
+            {
+                structure.Render(canvas);
+            }
+
+            // Render chainbots
+            foreach (var bot in chainbots)
+            {
+                bot.Render(canvas);
+            }
 
             // Render demo blocks (in screen space, after restore)
             foreach (var demoBlock in demoBlocks)
