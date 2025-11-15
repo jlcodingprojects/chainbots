@@ -6,7 +6,6 @@ namespace Chainbots.Models
     public enum HexBlockType
     {
         Target,   // Visual only - shows where to build
-        Material, // Physical blocks that can move and be manipulated
-        Anchor    // Fixed to ground, connects to material blocks
+        Material  // Physical blocks that can move and be manipulated (some can be anchored to ground)
     }
 }

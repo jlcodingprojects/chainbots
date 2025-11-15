@@ -28,7 +28,7 @@ namespace Chainbots.Rendering
             Vector2[] vertices = new Vector2[6];
             for (int i = 0; i < 6; i++)
             {
-                float angle = MathHelper.ToRadians(60 * i + 30);
+                float angle = MathHelper.ToRadians(60 * i);
                 vertices[i] = center + new Vector2(
                     radius * (float)Math.Cos(angle),
                     radius * (float)Math.Sin(angle)

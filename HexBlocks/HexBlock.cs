@@ -18,10 +18,14 @@ namespace Chainbots.HexBlocks
     /// </summary>
     public class HexBlock
     {
+        private static int _nextId = 1;
+        
+        public int Id { get; }
         public HexCoordinate Coordinate { get; }
         public Body? Body { get; private set; }
         public HexBlockType BlockType { get; }
         public float Size { get; }
+        public bool IsAnchoredToGround { get; set; }
         
         // For visual-only blocks (like Target), store position without physics
         private Vector2 visualPosition;
@@ -29,9 +33,11 @@ namespace Chainbots.HexBlocks
 
         public HexBlock(World world, HexCoordinate coordinate, float size, HexBlockType blockType, bool isStatic = false)
         {
+            Id = _nextId++;
             Coordinate = coordinate;
             Size = size;
             BlockType = blockType;
+            IsAnchoredToGround = false;
             
             // Convert hex coordinate to world position
             Vector2 position = coordinate.ToPixel(size);
@@ -45,7 +51,7 @@ namespace Chainbots.HexBlocks
                 return;
             }
             
-            // Create physics body for Material and Anchor blocks
+            // Create physics body for Material blocks
             Body = BodyFactory.CreateBody(world, position, 0f, isStatic ? BodyType.Static : BodyType.Dynamic);
             
             if (!isStatic)
@@ -72,10 +78,10 @@ namespace Chainbots.HexBlocks
         {
             var vertices = new Vertices(6);
             
-            // Flat-top hexagon
+            // Flat-top hexagon: vertices at 0°, 60°, 120°, 180°, 240°, 300°
             for (int i = 0; i < 6; i++)
             {
-                float angle = MathHelper.ToRadians(60 * i - 30);
+                float angle = MathHelper.ToRadians(60 * i);
                 float x = radius * (float)Math.Cos(angle);
                 float y = radius * (float)Math.Sin(angle);
                 vertices.Add(new Vector2(x, y));
@@ -86,19 +92,51 @@ namespace Chainbots.HexBlocks
 
         /// <summary>
         /// Creates an anchor joint between two hex blocks.
+        /// The blocks are connected through their centers.
         /// </summary>
         public static WeldJoint? CreateAnchorJoint(World world, HexBlock blockA, HexBlock blockB)
         {
             if (blockA.Body == null || blockB.Body == null || world == null)
                 return null;
             
-            // Create a weld joint to rigidly connect the blocks
-            var joint = JointFactory.CreateWeldJoint(
+            // Connect blocks at their centers using local coordinates
+            // Vector2.Zero represents the center of each body in local space
+            var joint = JointFactory.CreateDistanceJoint(
                 world,
                 blockA.Body, 
                 blockB.Body, 
-                blockA.Body.Position, 
-                blockB.Body.Position
+                Vector2.Zero,  // Local anchor on blockA (at its center)
+                Vector2.Zero   // Local anchor on blockB (at its center)
+            );
+            
+            return null;
+        }
+
+        /// <summary>
+        /// Creates an anchor joint between a hex block and a static ground body.
+        /// The block is anchored at its center to a point on the ground directly below it.
+        /// </summary>
+        public static WeldJoint? CreateGroundAnchorJoint(World world, HexBlock block, Body groundBody)
+        {
+            if (block.Body == null || groundBody == null || world == null)
+                return null;
+            
+            block.IsAnchoredToGround = true;
+            
+            // Calculate local anchor points
+            // We want to anchor the block at its current world position
+            // Ground body is typically at (0, 0), so local anchor on ground = block's world position
+            // Block's local anchor = (0, 0) which is its center
+            Vector2 localAnchorOnGround = block.Body.Position;
+            Vector2 localAnchorOnBlock = groundBody.Position; // Center of the block
+            
+            // Create a weld joint to rigidly connect the block to ground
+            var joint = JointFactory.CreateWeldJoint(
+                world,
+                groundBody,
+                block.Body, 
+                localAnchorOnGround,  // Local anchor point on ground body
+                localAnchorOnBlock    // Local anchor point on block (its center)
             );
             
             return joint;
@@ -116,62 +154,6 @@ namespace Chainbots.HexBlocks
                 fixture.CollisionCategories = (Category)category;
                 fixture.CollidesWith = (Category)collidesWith;
             }
-        }
-
-        /// <summary>
-        /// Draws the hex block as a sprite.
-        /// </summary>
-        public void Draw(SpriteBatch spriteBatch, Texture2D texture, Color color)
-        {
-            // Use visual position for Target blocks, physics body position for others
-            Vector2 position = (BlockType == HexBlockType.Target) ? visualPosition : Body.Position;
-            float rotation = (BlockType == HexBlockType.Target) ? visualRotation : Body.Rotation;
-            
-            Vector2 origin = new Vector2(texture.Width / 2f, texture.Height / 2f);
-            float scale = (Size * 2f) / texture.Width;
-            
-            spriteBatch.Draw(
-                texture,
-                position,
-                null,
-                color,
-                rotation,
-                origin,
-                scale,
-                SpriteEffects.None,
-                0f
-            );
-            
-            // Draw outline for target blocks
-            if (BlockType == HexBlockType.Target)
-            {
-                // Draw a thin border (would need a separate texture or shader for proper outline)
-                spriteBatch.Draw(
-                    texture,
-                    position,
-                    null,
-                    new Color(200, 200, 200, 150),
-                    rotation,
-                    origin,
-                    scale * 1.05f,
-                    SpriteEffects.None,
-                    0f
-                );
-            }
-        }
-
-        /// <summary>
-        /// Gets the world position of a connection point on the hexagon.
-        /// </summary>
-        public Vector2 GetConnectionPoint(int direction)
-        {
-            Vector2 position = (BlockType == HexBlockType.Target) ? visualPosition : Body.Position;
-            float rotation = (BlockType == HexBlockType.Target) ? visualRotation : Body.Rotation;
-            
-            float angle = MathHelper.ToRadians(60 * direction + rotation * (180f / MathF.PI));
-            float x = position.X + Size * (float)Math.Cos(angle);
-            float y = position.Y + Size * (float)Math.Sin(angle);
-            return new Vector2(x, y);
         }
     }
 }

@@ -55,6 +55,13 @@ namespace Chainbots.Rendering
             return new Vector2(screenX, screenY);
         }
 
+        public Vector2 ScreenToWorld(Vector2 screenPos)
+        {
+            float worldX = (screenPos.X - _viewportWidth / 2f) * Zoom / _pixelsPerMeter + Position.X;
+            float worldY = (screenPos.Y - _viewportHeight / 2f) * Zoom / _pixelsPerMeter + Position.Y;
+            return new Vector2(worldX, worldY);
+        }
+
         public void Pan(Vector2 delta)
         {
             Position += delta;

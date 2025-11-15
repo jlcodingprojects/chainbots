@@ -14,6 +14,7 @@ namespace Chainbots.Rendering
         void UpdateViewport(int width, int height);
         void UpdateMatrices();
         Vector2 WorldToScreen(Vector2 worldPos);
+        Vector2 ScreenToWorld(Vector2 screenPos);
         void Pan(Vector2 delta);
         void AdjustZoom(float factor);
         void Reset();

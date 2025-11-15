@@ -1,161 +1,226 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.Xna.Framework;
 using Chainbots.Models;
 using Chainbots.Physics;
+using Genbox.VelcroPhysics.Dynamics;
+using Genbox.VelcroPhysics.Dynamics.Joints;
+using Microsoft.Xna.Framework;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace Chainbots.HexBlocks
+namespace Chainbots.HexBlocks;
+
+/// <summary>
+/// Represents the initial configuration of a block.
+/// </summary>
+public struct BlockConfiguration
 {
-    /// <summary>
-    /// Manages hex block collections and initialization.
-    /// </summary>
-    public class HexGridManager : IHexGridManager
+    public int Id;
+    public Vector2 WorldPosition;
+    public List<int> ConnectedBlockIds;
+    public bool IsAnchoredToGround;
+
+    public BlockConfiguration(int id, float x, float y, bool anchoredToGround, params int[] connectedIds)
     {
-        public List<HexBlock> TargetBlocks { get; }
-        public List<HexBlock> MaterialBlocks { get; }
-        public List<HexBlock> AnchorBlocks { get; }
+        Id = id;
+        WorldPosition = new Vector2(x, y);
+        IsAnchoredToGround = anchoredToGround;
+        ConnectedBlockIds = new List<int>(connectedIds);
+    }
+}
 
-        private readonly IPhysicsWorld _physicsWorld;
-        private readonly float _hexSize;
+public class HexGridManager : IHexGridManager
+{
+    public List<HexBlock> TargetBlocks { get; }
+    public List<HexBlock> MaterialBlocks { get; }
 
-        public HexGridManager(IPhysicsWorld physicsWorld, float hexSize)
+    private readonly IPhysicsWorld _physicsWorld;
+    private readonly float _hexSize;
+    private Body? _groundBody; // Static body representing the ground for anchoring
+
+    private Dictionary<int, WeldJoint> _blockJoints = new Dictionary<int, WeldJoint>();
+
+    private static readonly BlockConfiguration[] InitialBlockPositions =
+    [
+        new BlockConfiguration(1, 0, 0, anchoredToGround: true),
+
+        new BlockConfiguration(2, 2, 0, anchoredToGround: true),
+
+        new BlockConfiguration(3, 4, 0, anchoredToGround: true),
+
+        new BlockConfiguration(4, 1, -1, anchoredToGround: false, 1, 2),
+
+        new BlockConfiguration(5, 3, -1, anchoredToGround: false, 2, 3),
+
+        new BlockConfiguration(6, 0, -2, anchoredToGround: false, 4)
+    ];
+
+    public HexGridManager(IPhysicsWorld physicsWorld, float hexSize)
+    {
+        _physicsWorld = physicsWorld;
+        _hexSize = hexSize;
+
+        TargetBlocks = new List<HexBlock>();
+        MaterialBlocks = new List<HexBlock>();
+    }
+
+    public void Initialize()
+    {
+        Clear();
+        CreateGroundBody();
+        CreateMaterialBlocksFromConfiguration();
+        CreateLinksFromConfiguration();
+    }
+
+    public void Clear()
+    {
+        TargetBlocks.Clear();
+        MaterialBlocks.Clear();
+        _blockJoints.Clear();
+        _groundBody = null;
+    }
+
+    private void CreateGroundBody()
+    {
+        _groundBody = _physicsWorld.GroundBody;
+    }
+
+    private void CreateTargetGrid()
+    {
+        // Create target grid (skeleton view) - larger structure
+        for (int q = -4; q <= 4; q++)
         {
-            _physicsWorld = physicsWorld;
-            _hexSize = hexSize;
-
-            TargetBlocks = new List<HexBlock>();
-            MaterialBlocks = new List<HexBlock>();
-            AnchorBlocks = new List<HexBlock>();
-        }
-
-        public void Initialize()
-        {
-            Clear();
-            CreateTargetGrid();
-            CreateAnchorBlocks();
-            CreateMaterialBlocks();
-            ConnectHexBlocks(MaterialBlocks);
-            ConnectAnchorsToMaterial();
-        }
-
-        public void Clear()
-        {
-            TargetBlocks.Clear();
-            MaterialBlocks.Clear();
-            AnchorBlocks.Clear();
-        }
-
-        private void CreateTargetGrid()
-        {
-            // Create target grid (skeleton view) - larger structure
-            for (int q = -4; q <= 4; q++)
+            for (int r = -4; r <= 4; r++)
             {
-                for (int r = -4; r <= 4; r++)
+                if (Math.Abs(q) + Math.Abs(r) <= 4)
                 {
-                    if (Math.Abs(q) + Math.Abs(r) <= 4)
-                    {
-                        var targetBlock = new HexBlock(
-                            _physicsWorld.World,
-                            new HexCoordinate(q, r),
-                            _hexSize,
-                            HexBlockType.Target,
-                            isStatic: true
-                        );
-                        TargetBlocks.Add(targetBlock);
-                    }
+                    var targetBlock = new HexBlock(
+                        _physicsWorld.World,
+                        new HexCoordinate(q, r),
+                        _hexSize,
+                        HexBlockType.Target,
+                        isStatic: true
+                    );
+                    TargetBlocks.Add(targetBlock);
                 }
             }
         }
+    }
 
-        private void CreateAnchorBlocks()
+    private void CreateMaterialBlocksFromConfiguration()
+    {
+        // Create material blocks from the initial configuration array
+        foreach (var config in InitialBlockPositions)
         {
-            // Create anchor blocks (locked to ground) - positioned off to the side
-            // These are part of the material group
-            for (int i = 0; i < 3; i++)
+            // Convert world position to hex coordinate (approximate)
+            var hexCoord = HexCoordinate.FromPixel(config.WorldPosition, _hexSize);
+
+            // Create the material block at the exact world position
+            var materialBlock = new HexBlock(
+                _physicsWorld.World,
+                hexCoord,
+                _hexSize,
+                HexBlockType.Material,
+                isStatic: false
+            );
+
+            if (materialBlock.Body != null)
             {
-                var anchorBlock = new HexBlock(
-                    _physicsWorld.World,
-                    new HexCoordinate(-8, i - 1),
-                    _hexSize,
-                    HexBlockType.Anchor,
-                    isStatic: true
-                );
-                AnchorBlocks.Add(anchorBlock);
+                var x = 0 + (config.WorldPosition.X * 0.75f);
+                // Calculate a clean block placement Y coordinate
+                var y = 7.05f + (config.WorldPosition.Y * 0.375f);
+                              //- ((config.WorldPosition.X + 1) % 2) * 0.375f)
+                              
+                materialBlock.Body.Position = new Vector2(x, y);
             }
-        }
 
-        private void CreateMaterialBlocks()
+            MaterialBlocks.Add(materialBlock);
+        }
+    }
+
+    private void CreateLinksFromConfiguration()
+    {
+        if (_groundBody == null) return;
+
+        foreach (var config in InitialBlockPositions)
         {
-            // Create material blocks - smaller starting structure with physics enabled
-            // These will have gravity and can move
-            for (int q = -2; q <= 2; q++)
+            var block = GetBlockById(config.Id);
+            if (block == null) continue;
+
+            // Anchor to ground if specified
+            if (config.IsAnchoredToGround)
             {
-                for (int r = -2; r <= 2; r++)
+                var joint = HexBlock.CreateGroundAnchorJoint(_physicsWorld.World, block, _groundBody);
+                if (joint != null)
                 {
-                    if (Math.Abs(q) + Math.Abs(r) <= 2)
-                    {
-                        var materialBlock = new HexBlock(
-                            _physicsWorld.World,
-                            new HexCoordinate(q, r),
-                            _hexSize,
-                            HexBlockType.Material,
-                            isStatic: false
-                        );
-                        MaterialBlocks.Add(materialBlock);
-                    }
+                    _blockJoints[config.Id] = joint;
                 }
             }
+
+            // Create links to connected blocks
+            foreach (var connectedId in config.ConnectedBlockIds)
+            {
+                CreateLinkBetweenBlocks(config.Id, connectedId);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Reusable method to create a link (weld joint) between two blocks by their IDs.
+    /// The joint connects the blocks through their centers.
+    /// </summary>
+    /// <param name="blockIdA">ID of the first block</param>
+    /// <param name="blockIdB">ID of the second block</param>
+    /// <returns>True if the link was created successfully, false otherwise</returns>
+    public bool CreateLinkBetweenBlocks(int blockIdA, int blockIdB)
+    {
+        var blockA = GetBlockById(blockIdA);
+        var blockB = GetBlockById(blockIdB);
+
+        if (blockA == null || blockB == null)
+        {
+            Console.WriteLine($"Cannot create link: Block #{blockIdA} or #{blockIdB} not found");
+            return false;
         }
 
-        private void ConnectHexBlocks(List<HexBlock> blocks)
+        if (blockA.Body == null || blockB.Body == null)
         {
-            // Connect neighboring hex blocks with anchor joints
-            foreach (var blockA in blocks)
-            {
-                foreach (var blockB in blocks)
-                {
-                    if (blockA == blockB) continue;
+            Console.WriteLine($"Cannot create link: Block #{blockIdA} or #{blockIdB} has no physics body");
+            return false;
+        }
 
-                    // Check if they are neighbors
-                    for (int dir = 0; dir < 6; dir++)
-                    {
-                        var neighbor = blockA.Coordinate.GetNeighbor(dir);
-                        if (neighbor.Equals(blockB.Coordinate))
-                        {
-                            // Create anchor joint between neighbors
-                            HexBlock.CreateAnchorJoint(_physicsWorld.World, blockA, blockB);
-                            break;
-                        }
-                    }
-                }
+        // Create a weld joint connecting the two blocks through their centers
+        var joint = HexBlock.CreateAnchorJoint(_physicsWorld.World, blockA, blockB);
+
+        if (joint != null)
+        {
+            Console.WriteLine($"Created link between Block #{blockIdA} and Block #{blockIdB}");
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Gets a block by its ID.
+    /// </summary>
+    /// <param name="id">The block ID</param>
+    /// <returns>The HexBlock if found, null otherwise</returns>
+    public HexBlock? GetBlockById(int id)
+    {
+        int index = id - 1;
+
+        if (index >= 0 && index < MaterialBlocks.Count)
+        {
+            var block = MaterialBlocks[index];
+            // Verify the ID matches (safety check)
+            if (block.Id == id)
+            {
+                return block;
             }
         }
 
-        private void ConnectAnchorsToMaterial()
-        {
-            // Connect some material blocks to anchor blocks
-            if (AnchorBlocks.Count > 0 && MaterialBlocks.Count > 0)
-            {
-                // Find material blocks near the anchors and connect them
-                foreach (var anchorBlock in AnchorBlocks)
-                {
-                    // Find nearby material blocks
-                    foreach (var materialBlock in MaterialBlocks)
-                    {
-                        float distance = Vector2.Distance(
-                            anchorBlock.Coordinate.ToPixel(_hexSize),
-                            materialBlock.Coordinate.ToPixel(_hexSize)
-                        );
-
-                        // Connect if within reasonable range
-                        if (distance < _hexSize * 5f)
-                        {
-                            HexBlock.CreateAnchorJoint(_physicsWorld.World, anchorBlock, materialBlock);
-                        }
-                    }
-                }
-            }
-        }
+        // Fallback: search through all blocks
+        return MaterialBlocks.FirstOrDefault(b => b.Id == id);
     }
 }
 

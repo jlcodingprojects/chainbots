@@ -46,24 +46,26 @@ namespace Chainbots.Models
         }
 
         /// <summary>
-        /// Converts axial coordinates to pixel position.
+        /// Converts axial coordinates to pixel position for flat-top hexagons.
         /// </summary>
         public Vector2 ToPixel(float hexSize)
         {
             float sqrt3 = 1.73205080757f;
-            float x = hexSize * (sqrt3 * Q + sqrt3 / 2 * R);
-            float y = hexSize * (3f / 2f * R);
+            // Flat-top hexagon coordinate conversion
+            float x = hexSize * (3f / 2f * Q);
+            float y = hexSize * (sqrt3 / 2f * Q + sqrt3 * R);
             return new Vector2(x, y);
         }
 
         /// <summary>
-        /// Converts pixel position to hex coordinates.
+        /// Converts pixel position to hex coordinates for flat-top hexagons.
         /// </summary>
         public static HexCoordinate FromPixel(Vector2 pixel, float hexSize)
         {
             float sqrt3 = 1.73205080757f;
-            float q = (sqrt3 / 3f * pixel.X - 1f / 3f * pixel.Y) / hexSize;
-            float r = (2f / 3f * pixel.Y) / hexSize;
+            // Flat-top hexagon coordinate conversion
+            float q = (2f / 3f * pixel.X) / hexSize;
+            float r = (-1f / 3f * pixel.X + sqrt3 / 3f * pixel.Y) / hexSize;
             
             // Round to nearest hex coordinate
             return RoundToHex(q, r);

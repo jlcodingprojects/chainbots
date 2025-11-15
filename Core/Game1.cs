@@ -31,6 +31,7 @@ namespace Chainbots.Core
         private SpriteFont? _hudFont;
         
         private bool _isSimulationRunning = false;
+        private HexBlock? _hoveredBlock = null;
         
         // Constants
         private const float HexSize = 0.5f; // meters in physics world
@@ -84,12 +85,11 @@ namespace Chainbots.Core
 
         private void InitializeSimulation()
         {
-            _hexGridManager.Initialize();
             _physicsWorld.CreateGround();
+            _hexGridManager.Initialize();
             _physicsWorld.SetupCollisionGroups(
                 _hexGridManager.TargetBlocks,
-                _hexGridManager.MaterialBlocks,
-                _hexGridManager.AnchorBlocks
+                _hexGridManager.MaterialBlocks
             );
         }
 
@@ -142,12 +142,40 @@ namespace Chainbots.Core
             InitializeSimulation();
         }
 
+        private void UpdateHoverDetection()
+        {
+            var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
+            Vector2 mouseScreenPos = new Vector2(mouseState.X, mouseState.Y);
+            Vector2 mouseWorldPos = _camera.ScreenToWorld(mouseScreenPos);
+            
+            // Check if mouse is over any material block
+            _hoveredBlock = null;
+            float minDistance = float.MaxValue;
+            
+            foreach (var block in _hexGridManager.MaterialBlocks)
+            {
+                if (block.Body == null) continue;
+                
+                float distance = Vector2.Distance(mouseWorldPos, block.Body.Position);
+                
+                // Check if within hex radius
+                if (distance < HexSize && distance < minDistance)
+                {
+                    minDistance = distance;
+                    _hoveredBlock = block;
+                }
+            }
+        }
+
         protected override void Update(GameTime gameTime)
         {
             // Handle input
             _inputHandler.Update(_camera, gameTime, out bool shouldExit);
             if (shouldExit)
                 Exit();
+            
+            // Update hover detection
+            UpdateHoverDetection();
             
             // Update toolbar
             _toolbar?.Update();
@@ -200,16 +228,17 @@ namespace Chainbots.Core
                 rasterizerState: null
             );
             
-            // Draw anchor blocks (light grey)
-            foreach (var block in _hexGridManager.AnchorBlocks)
-            {
-                _hexRenderer.DrawHexagonFilled(_spriteBatch, block.Coordinate, new Color(180, 180, 180, 255));
-            }
-            
-            // Draw material blocks (light grey)
+            // Draw material blocks
             foreach (var block in _hexGridManager.MaterialBlocks)
             {
-                _hexRenderer.DrawHexagonFilledAtWorld(_spriteBatch, block.Body.Position, new Color(200, 200, 200, 255));
+                if (block.Body == null) continue; // Skip blocks without physics bodies
+                
+                // Use different color for anchored blocks
+                Color blockColor = block.IsAnchoredToGround 
+                    ? new Color(150, 150, 200, 255)  // Bluish-grey for anchored blocks
+                    : new Color(200, 200, 200, 255); // Light grey for regular material blocks
+                    
+                _hexRenderer.DrawHexagonFilledAtWorld(_spriteBatch, block.Body.Position, blockColor);
             }
             
             _spriteBatch.End();
@@ -226,12 +255,69 @@ namespace Chainbots.Core
             // Draw toolbar
             _toolbar?.Draw(_spriteBatch);
             
+            // Draw hovered block info
+            DrawHoveredBlockInfo(_spriteBatch);
+            
             _spriteBatch.End();
             
             // Draw physics debug view (if available)
             _debugView?.RenderDebugData(_camera.Projection, _camera.View);
             
             base.Draw(gameTime);
+        }
+
+        private void DrawHoveredBlockInfo(SpriteBatch spriteBatch)
+        {
+            if (_hoveredBlock == null || _hudFont == null) return;
+            
+            // Get block information
+            Vector2 position = _hoveredBlock.Body?.Position ?? Vector2.Zero;
+            float rotation = _hoveredBlock.Body?.Rotation ?? 0f;
+            int id = _hoveredBlock.Id;
+            
+            // Convert rotation to degrees
+            float rotationDegrees = MathHelper.ToDegrees(rotation);
+            
+            // Format the text
+            string infoText = $"Block #{id}\n" +
+                             $"X: {position.X:F2} m\n" +
+                             $"Y: {position.Y:F2} m\n" +
+                             $"Rotation: {rotationDegrees:F1}°";
+            
+            // Position info box near the mouse (top-right of screen for visibility)
+            Vector2 infoPosition = new Vector2(
+                _graphics.PreferredBackBufferWidth - 250,
+                100
+            );
+            
+            // Draw background box
+            var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
+            Vector2 textSize = _hudFont.MeasureString(infoText);
+            Rectangle backgroundRect = new Rectangle(
+                (int)infoPosition.X - 10,
+                (int)infoPosition.Y - 10,
+                (int)textSize.X + 20,
+                (int)textSize.Y + 20
+            );
+            
+            // Create a simple background texture if we don't have one
+            if (_hexTexture != null)
+            {
+                // Draw a semi-transparent dark background
+                DrawRectangle(spriteBatch, backgroundRect, new Color(0, 0, 0, 200));
+            }
+            
+            // Draw the text
+            spriteBatch.DrawString(_hudFont, infoText, infoPosition, Color.White);
+        }
+
+        private void DrawRectangle(SpriteBatch spriteBatch, Rectangle rect, Color color)
+        {
+            // Create a 1x1 white texture for drawing rectangles
+            Texture2D pixel = new Texture2D(GraphicsDevice, 1, 1);
+            pixel.SetData(new[] { Color.White });
+            
+            spriteBatch.Draw(pixel, rect, color);
         }
     }
 }

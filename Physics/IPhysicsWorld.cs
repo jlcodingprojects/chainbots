@@ -13,7 +13,7 @@ namespace Chainbots.Physics
         World World { get; }
         Body? GroundBody { get; }
         void CreateGround();
-        void SetupCollisionGroups(List<HexBlock> targetBlocks, List<HexBlock> materialBlocks, List<HexBlock> anchorBlocks);
+        void SetupCollisionGroups(List<HexBlock> targetBlocks, List<HexBlock> materialBlocks);
         void Update(float deltaTime);
         void Clear();
     }
