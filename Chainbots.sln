@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11205.157 d18.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chainbots", "Chainbots.csproj", "{D5E77728-A0E2-841C-6B64-F76E30A8D7A7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D5E77728-A0E2-841C-6B64-F76E30A8D7A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5E77728-A0E2-841C-6B64-F76E30A8D7A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5E77728-A0E2-841C-6B64-F76E30A8D7A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5E77728-A0E2-841C-6B64-F76E30A8D7A7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {29875975-6861-4BFB-AED5-A0438A10F9B9}
+	EndGlobalSection
+EndGlobal

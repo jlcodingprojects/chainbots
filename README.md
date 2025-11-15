@@ -41,14 +41,14 @@ Autonomous robots that build physical structures using hexagonal blocks.
 
 ## 2D Simulation
 
-This repository includes a 2D simulation of the chainbot locomotion and block placement mechanics.
+This repository includes a 2D simulation of the chainbot locomotion and block placement mechanics using MonoGame and VelcroPhysics.
 
 ### Project Setup
 
 **Technology Stack:**
-- .NET 8.0 (Windows)
-- WPF (Windows Presentation Foundation)
-- SkiaSharp 2.88.8 for hardware-accelerated 2D rendering
+- .NET 8.0
+- MonoGame 3.8 (DesktopGL)
+- VelcroPhysics for 2D rigid body physics simulation
 
 **Build and Run:**
 ```bash
@@ -64,13 +64,23 @@ dotnet run
 
 ### Current Implementation
 
-The project scaffold includes:
-- ✅ WPF project with .NET 8.0
-- ✅ SkiaSharp.Views.WPF integrated
-- ✅ 60 FPS render loop
-- ✅ Chainbots.xo logo displayed
-- ⬜ Hexagonal geometry system (planned)
-- ⬜ Walking simulation (planned)
-- ⬜ Block placement (planned)
+The project includes:
+- ✅ MonoGame project with .NET 8.0
+- ✅ VelcroPhysics integration for realistic physics
+- ✅ Hexagonal geometry system with axial coordinates
+- ✅ Target space (skeleton view) showing build goals
+- ✅ Material space (solid blocks) with gravity and physics
+- ✅ Anchor blocks locked to ground near emitter
+- ✅ Hex blocks connected via anchor joints
+- ✅ Separate physics groups for target/material spaces
+- ✅ VelcroPhysics debug view for visualization
+- ⬜ Chainbot implementation (planned)
+
+### Controls
+
+- **Arrow Keys**: Move camera
+- **+/-**: Zoom in/out
+- **R**: Reset camera
+- **Escape**: Exit
 
 See `SIMULATION_PLAN.md` for the complete implementation roadmap.
