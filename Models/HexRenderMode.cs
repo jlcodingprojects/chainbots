@@ -1,4 +1,4 @@
-namespace Chainbots
+namespace Chainbots.Models
 {
     /// <summary>
     /// Defines the rendering style for hexagons.

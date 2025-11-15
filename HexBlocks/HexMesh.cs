@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using Chainbots.Models;
 
-namespace Chainbots
+namespace Chainbots.HexBlocks
 {
     /// <summary>
     /// Manages the hexagonal mesh state - which positions have hexagons and which don't.

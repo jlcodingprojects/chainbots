@@ -13,6 +13,11 @@
     <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />
     <PackageReference Include="Genbox.VelcroPhysics.MonoGame" Version="0.1.0-alpha.2" />
     <PackageReference Include="Genbox.VelcroPhysics.MonoGame.DebugView" Version="0.1.0-alpha.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <MonoGameContentReference Include="Content\chainbots.mgcb" />
   </ItemGroup>
 
 </Project>

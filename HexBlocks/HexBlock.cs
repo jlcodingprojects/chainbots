@@ -8,19 +8,10 @@ using Genbox.VelcroPhysics.Dynamics.Joints;
 using Genbox.VelcroPhysics.Collision.Shapes;
 using Genbox.VelcroPhysics.Shared;
 using Genbox.VelcroPhysics.Collision.Filtering;
+using Chainbots.Models;
 
-namespace Chainbots
+namespace Chainbots.HexBlocks
 {
-    /// <summary>
-    /// Type of hex block for different behaviors and rendering.
-    /// </summary>
-    public enum HexBlockType
-    {
-        Target,   // Visual only - shows where to build
-        Material, // Physical blocks that can move and be manipulated
-        Anchor    // Fixed to ground, connects to material blocks
-    }
-
     /// <summary>
     /// Represents a hexagonal block in the physics simulation.
     /// Uses VelcroPhysics for physics simulation and sprites for rendering.
@@ -28,9 +19,13 @@ namespace Chainbots
     public class HexBlock
     {
         public HexCoordinate Coordinate { get; }
-        public Body Body { get; private set; }
+        public Body? Body { get; private set; }
         public HexBlockType BlockType { get; }
         public float Size { get; }
+        
+        // For visual-only blocks (like Target), store position without physics
+        private Vector2 visualPosition;
+        private float visualRotation;
 
         public HexBlock(World world, HexCoordinate coordinate, float size, HexBlockType blockType, bool isStatic = false)
         {
@@ -41,7 +36,16 @@ namespace Chainbots
             // Convert hex coordinate to world position
             Vector2 position = coordinate.ToPixel(size);
             
-            // Create physics body
+            // Target blocks are visual only - no physics
+            if (blockType == HexBlockType.Target)
+            {
+                visualPosition = position;
+                visualRotation = 0f;
+                Body = null; // No physics body for target blocks
+                return;
+            }
+            
+            // Create physics body for Material and Anchor blocks
             Body = BodyFactory.CreateBody(world, position, 0f, isStatic ? BodyType.Static : BodyType.Dynamic);
             
             if (!isStatic)
@@ -105,6 +109,8 @@ namespace Chainbots
         /// </summary>
         public void SetCollisionCategory(short category, short collidesWith)
         {
+            if (Body == null) return;
+            
             foreach (var fixture in Body.FixtureList)
             {
                 fixture.CollisionCategories = (Category)category;
@@ -117,8 +123,9 @@ namespace Chainbots
         /// </summary>
         public void Draw(SpriteBatch spriteBatch, Texture2D texture, Color color)
         {
-            Vector2 position = Body.Position;
-            float rotation = Body.Rotation;
+            // Use visual position for Target blocks, physics body position for others
+            Vector2 position = (BlockType == HexBlockType.Target) ? visualPosition : Body.Position;
+            float rotation = (BlockType == HexBlockType.Target) ? visualRotation : Body.Rotation;
             
             Vector2 origin = new Vector2(texture.Width / 2f, texture.Height / 2f);
             float scale = (Size * 2f) / texture.Width;
@@ -158,10 +165,14 @@ namespace Chainbots
         /// </summary>
         public Vector2 GetConnectionPoint(int direction)
         {
-            float angle = MathHelper.ToRadians(60 * direction + Body.Rotation * (180f / MathF.PI));
-            float x = Body.Position.X + Size * (float)Math.Cos(angle);
-            float y = Body.Position.Y + Size * (float)Math.Sin(angle);
+            Vector2 position = (BlockType == HexBlockType.Target) ? visualPosition : Body.Position;
+            float rotation = (BlockType == HexBlockType.Target) ? visualRotation : Body.Rotation;
+            
+            float angle = MathHelper.ToRadians(60 * direction + rotation * (180f / MathF.PI));
+            float x = position.X + Size * (float)Math.Cos(angle);
+            float y = position.Y + Size * (float)Math.Sin(angle);
             return new Vector2(x, y);
         }
     }
 }
+

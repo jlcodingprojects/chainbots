@@ -1,7 +1,7 @@
 using System;
 using Microsoft.Xna.Framework;
 
-namespace Chainbots
+namespace Chainbots.Models
 {
     /// <summary>
     /// Represents a hexagon position using axial coordinates (q, r).
