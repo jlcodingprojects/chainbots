@@ -2,37 +2,34 @@
 
 Autonomous robots that build physical structures using hexagonal blocks.
 
-The fundamental idea is inspired by nature, specifically plants. The thought struck me that trees grow into complex structures, which we cut down, furnish into planks of wood, then reassemble as houses.
+The idea is inspired by plants. The thought struck me that trees grow into complex structures, which we cut down, furnish into planks of wood, then reassemble as houses.
 
-Why are we unable to build structures which grow themselves instead of our expensive wasteful process? We can build such fantastically complex machines such as spaceships and data centres but not simple self growing structures?
-
-This led me down a path of exploring biology, emergence, organic chemistry, and current research. 
+Why can't we build structures which grow like trees? We can build such fantastically complex machines such as spaceships and data centres, why not this?
 
 ## What is necessary, what is sufficient, and what do we have?
 
 Living beings arent the only example of self growing structures. Two that spring to mind are crystals and cities. You could probably also throw in social trends and galaxies. These are all examples where an initial state + energy = a more varied and complex state.
 
-The question on my mind was what is the principle behind it all and how can we build systems which take advantage of it? Specifically with the goal of building self-growing physical structures - ideally with a practical application in construction.
+What is the principle behind it all? How can we build systems which do the same? Specifically with the goal of building self-growing physical structures (as opposed to theoretical or abstract structures).
 
 What all of these have in common is the following:
 - Constituent parts which engage with each other according to certain criteria
-- Some means of transport to move these parts around.
-- A source of energy which drives the prior two points
+- Some means of transport to move these parts around
+- A source of energy which powers the interactions between the constituent parts
 
 For example, trees:
 - Constituent parts are cells - all derive from stem cells but after differentiation engage with each other in complex ways
 - Transport is its vascular system
-- Source of energy is *metabolism*. Yes the ultimate source is photosynthesis but that's less the concern here. We want to understand how the constituent parts engage with each other.
+- Source of energy is ATP. Yes the ultimate source is photosynthesis but that's less the concern here. We want to understand how the constituent parts engage with each other.
 
 The other examples have the same traits, albeit in a more abstract way for most of them.
 
 ## Why we cant make synthetic trees
 
-A synchronic perspective answers this quite easily. Trees are complex state machines which rely on immensely complex chemical interactions. 
-Even if we could build miniture machines that function like stem cells, the development of the tree itself depends on seemingly random interactions between components. The task of programming the interactions between the constituent parts (eg programming when a stem cell should differentiate, and programming the behaviours of the diverged cells) is very very complex.
+A synchronic perspective answers this quite easily. Trees are complex machines which rely on immensely complex chemical interactions. Furthermore it's extremely difficult to look at one part of the structure and understand how it will affect the structure as a whole.
 It relies heavily on the concept of emergence, that a set of individual parts each following a discrete set of behaviours can result in beautiful complex super-structures.
 
-The individual cells act like state machines, and somehow the complex interactions between these machines results in the growth of the tree. Perhaps the most fascinating part of this is that the cells are acting in their own interest and for their own survival.
+The individual cells act like state machines, and somehow the complex interactions between these machines results in the growth of the tree. 
 
 ### How we *could* make a synthetic tree
 
@@ -44,7 +41,7 @@ So yeah about a thousand years away, give or take a couple orders of magnitude.
 
 # The reasoning flaw
 
-It's tempting to give up here, and I expect many do hence why there seems to be so little effective research on the topic, let alone practical outcomes. 
+It's tempting to give up here, but I usually spend at least 2 weeks on a project before losing interest and it's only been 1 so far...
 
 I believe the mistake is taking a synchronic perspective instead of a diachronic perspective. Instead of looking at biology today, consider why and how it works that way. 
 Why is the vascular system so complex? Why do livings things rely on such complex chemical interactions? Why are the emergent state machines so complex? Why is metabolism so complex?
@@ -52,8 +49,9 @@ Why is the vascular system so complex? Why do livings things rely on such comple
 The key understanding is that it is not this way because the *end result* inherently requires it to be this way. It's like this as a side effect of the mechanisms by which is came to be.
 
 - The transport system does not have to be vascular, it does not require fluid dynamics and soft bodies.
-- The constituent parts to not need to be exceedingly complex state machines with the ability to morph into other machines. They simply have to lock into place at the right time.
-- The source of energy does not need to be self contained in the blocks. We do not need to create a metabolism
+- The constituent parts to not need to be exceedingly complex state machines with the ability to morph into other machines. They simply have to lock into place at the right time
+- The source of energy does not need to be self contained in the blocks.
+
 
 # What we DO need
 
@@ -69,7 +67,7 @@ So lets come up with a new architecture which does all this but brings this a li
 **Constituent Parts**: Tesselating blocks that lock together to form structures
 - Simple locking mechanism for assembly
 - Very simple and cheap to manufactor 
-- Hexagons in 2D, probably Rhombic Dodecahedrons in 3D
+- Hexagons in 2D simulation, possibly Rhombic Dodecahedrons in 3D
 - Conductive (alternative edges can carry positive and negative)
 
 **Chainbots**: Mobile robots that navigate and build on the hex lattice
@@ -80,10 +78,11 @@ So lets come up with a new architecture which does all this but brings this a li
 
 It supplies all the requirements as follows
 
-- Transport: Surface is predicatble due to highly constrained degrees of freedom. Chainbots can walk along the surface (or climb or hang)
-- Metabolism: Surface itself is conductive so bots to not require a metabolism. 
+- Transport: Surface is predictable due to constrained degrees of freedom. Chainbots can walk along the surface (or climb or hang)
+- Metabolism: Surface itself is conductive so bots do not require an onboard energy source. 
 - Constituent parts: The logic which decides how the parts interacts is dedicated by a dedicated controller (eg computer). Individual parts do not need to carry complex logic around with them.
 
+Chainbots will be programmed at construction time meaning they only need a short set of instructions (<1,000, give or take) at a time to lay the next block.
 
 ## Possible chainbot structure MSPaint diagram
 
@@ -126,13 +125,6 @@ Bot will use a finite state machine
 ## 2D Simulation
 
 This repository includes a 2D simulation of the chainbot locomotion and block placement mechanics using MonoGame and VelcroPhysics.
-
- 
-## Next steps
-
-1. Update the simulation to support triangular interlocking chainbots. Implement the FSM.
-2. Brainstorm mechanics for 
-
 
 ### Project Setup
 
