@@ -21,7 +21,7 @@ namespace Chainbots.Rendering
 
             // Draw proper hexagon using point-in-polygon test
             Vector2 center = new Vector2(textureSize / 2f, textureSize / 2f);
-            float radius = size * 0.85f;
+            float radius = size;
 
             // Calculate hexagon vertices (flat-top orientation)
             // Match the physics vertices for proper alignment

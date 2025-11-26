@@ -1,6 +1,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Chainbots.Rendering;
+using Chainbots.HexBlocks;
+using System.Collections.Generic;
 
 namespace Chainbots.Input
 {
@@ -10,53 +12,105 @@ namespace Chainbots.Input
     public class InputHandler : IInputHandler
     {
         private KeyboardState _previousKeyState;
+        private KeyboardState _currentKeyState;
         private MouseState _previousMouseState;
+        private MouseState _currentMouseState;
 
         public InputHandler()
         {
             _previousKeyState = Keyboard.GetState();
+            _currentKeyState = _previousKeyState;
             _previousMouseState = Mouse.GetState();
+            _currentMouseState = _previousMouseState;
+        }
+
+        public void BeginFrame()
+        {
+            _currentKeyState = Keyboard.GetState();
+            _currentMouseState = Mouse.GetState();
+        }
+
+        public void EndFrame()
+        {
+            _previousKeyState = _currentKeyState;
+            _previousMouseState = _currentMouseState;
         }
 
         public void Update(ICamera camera, GameTime gameTime, out bool shouldExit)
         {
-            var keyState = Keyboard.GetState();
-            var mouseState = Mouse.GetState();
-
             shouldExit = GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed ||
-                         keyState.IsKeyDown(Keys.Escape);
+                         _currentKeyState.IsKeyDown(Keys.Escape);
 
             // Camera controls
             const float cameraSpeed = 5f;
             float deltaSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             Vector2 cameraDelta = Vector2.Zero;
-            if (keyState.IsKeyDown(Keys.Left))
+            if (_currentKeyState.IsKeyDown(Keys.Left))
                 cameraDelta.X -= cameraSpeed * deltaSeconds;
-            if (keyState.IsKeyDown(Keys.Right))
+            if (_currentKeyState.IsKeyDown(Keys.Right))
                 cameraDelta.X += cameraSpeed * deltaSeconds;
-            if (keyState.IsKeyDown(Keys.Up))
+            if (_currentKeyState.IsKeyDown(Keys.Up))
                 cameraDelta.Y -= cameraSpeed * deltaSeconds;
-            if (keyState.IsKeyDown(Keys.Down))
+            if (_currentKeyState.IsKeyDown(Keys.Down))
                 cameraDelta.Y += cameraSpeed * deltaSeconds;
 
             if (cameraDelta != Vector2.Zero)
                 camera.Pan(cameraDelta);
 
             // Zoom controls
-            if (keyState.IsKeyDown(Keys.OemPlus) || keyState.IsKeyDown(Keys.Add))
+            if (_currentKeyState.IsKeyDown(Keys.OemPlus) || _currentKeyState.IsKeyDown(Keys.Add))
                 camera.AdjustZoom(0.99f);
-            if (keyState.IsKeyDown(Keys.OemMinus) || keyState.IsKeyDown(Keys.Subtract))
+            if (_currentKeyState.IsKeyDown(Keys.OemMinus) || _currentKeyState.IsKeyDown(Keys.Subtract))
                 camera.AdjustZoom(1.01f);
 
             // Reset camera
-            if (keyState.IsKeyDown(Keys.R) && !_previousKeyState.IsKeyDown(Keys.R))
+            if (_currentKeyState.IsKeyDown(Keys.R) && !_previousKeyState.IsKeyDown(Keys.R))
             {
                 camera.Reset();
             }
+        }
 
-            _previousKeyState = keyState;
-            _previousMouseState = mouseState;
+        public void UpdateDragAndDrop(ICamera camera, List<HexBlock> blocks, out HexBlock? clickedBlock, out Vector2 worldMousePosition)
+        {
+            Vector2 mouseScreenPos = new Vector2(_currentMouseState.X, _currentMouseState.Y);
+            worldMousePosition = camera.ScreenToWorld(mouseScreenPos);
+            
+            clickedBlock = null;
+
+            // Check if left mouse button was just pressed
+            if (IsMouseButtonPressed())
+            {
+                // Find the block under the mouse
+                float minDistance = float.MaxValue;
+                const float hexRadius = 0.5f; // Match HexSize constant
+                
+                foreach (var block in blocks)
+                {
+                    if (block.Body == null) continue;
+                    
+                    float distance = Vector2.Distance(worldMousePosition, block.Body.Position);
+                    
+                    // Check if within hex radius and it's the closest one
+                    if (distance < hexRadius && distance < minDistance)
+                    {
+                        minDistance = distance;
+                        clickedBlock = block;
+                    }
+                }
+            }
+        }
+
+        public bool IsMouseButtonPressed()
+        {
+            return _currentMouseState.LeftButton == ButtonState.Pressed && 
+                   _previousMouseState.LeftButton == ButtonState.Released;
+        }
+
+        public bool IsMouseButtonReleased()
+        {
+            return _currentMouseState.LeftButton == ButtonState.Released && 
+                   _previousMouseState.LeftButton == ButtonState.Pressed;
         }
     }
 }

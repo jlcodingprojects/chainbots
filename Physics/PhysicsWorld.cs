@@ -28,7 +28,7 @@ public class PhysicsWorld : IPhysicsWorld
     public void CreateGround()
     {
         // Create a static ground body at the bottom
-        float groundY = 8f; // 8 meters down from center
+        float groundY = 7.88f; // 8 meters down from center
         GroundBody = BodyFactory.CreateBody(World, new Vector2(0f, groundY), 0f, BodyType.Static);
 
         // Create a wide rectangle for the ground (100m wide, 1m tall)

@@ -26,6 +26,11 @@ namespace Chainbots.Rendering
         public void DrawHexagonOutline(SpriteBatch spriteBatch, HexCoordinate coord, Color color, bool dotted)
         {
             Vector2 worldPos = coord.ToPixel(_hexSize);
+            DrawHexagonOutlineAtWorld(spriteBatch, worldPos, color, dotted);
+        }
+
+        public void DrawHexagonOutlineAtWorld(SpriteBatch spriteBatch, Vector2 worldPos, Color color, bool dotted)
+        {
             Vector2 screenPos = _camera.WorldToScreen(worldPos);
 
             float screenRadius = _hexSize * _pixelsPerMeter;
