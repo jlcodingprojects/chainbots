@@ -19,7 +19,6 @@ public class HexBlock
     public int Id { get; }
     public HexCoordinate Coordinate { get; }
     public Body? Body { get; private set; }
-    public HexBlockType BlockType { get; }
     public float Size { get; }
     public bool IsAnchoredToGround { get; set; }
     public Vector2 WorldPosition => Body?.Position ?? visualPosition;
@@ -33,26 +32,15 @@ public class HexBlock
         _nextId = 1;
     }
 
-    public HexBlock(World world, HexCoordinate coordinate, float size, HexBlockType blockType, bool isStatic = false)
+    public HexBlock(World world, HexCoordinate coordinate, float size, bool isStatic = false)
     {
         Id = _nextId++;
         Coordinate = coordinate;
         Size = size;
-        BlockType = blockType;
         IsAnchoredToGround = false;
         
-        // Convert hex coordinate to world position
         Vector2 position = coordinate.ToPixel(size);
-        
-        // Target blocks are visual only - no physics
-        if (blockType == HexBlockType.Target)
-        {
-            visualPosition = position;
-            visualRotation = 0f;
-            Body = null; // No physics body for target blocks
-            return;
-        }
-        
+                
         // Create physics body for Material blocks
         Body = BodyFactory.CreateBody(world, position, 0f, isStatic ? BodyType.Static : BodyType.Dynamic);
         
@@ -184,11 +172,11 @@ public class HexBlock
     /// <summary>
     /// Helper method to create a block at a precise X/Y position with edges perfectly aligned.
     /// </summary>
-    public static HexBlock CreateAtPosition(World world, Vector2 position, float size, HexBlockType blockType, bool isStatic = false, float rotation = 0f)
+    public static HexBlock CreateAtPosition(World world, Vector2 position, float size, bool isStatic = false, float rotation = 0f)
     {
         // Create a temporary coordinate (will be overridden by precise position)
         var tempCoord = HexCoordinate.FromPixel(position, size);
-        var block = new HexBlock(world, tempCoord, size, blockType, isStatic);
+        var block = new HexBlock(world, tempCoord, size, isStatic);
         block.SetPrecisePosition(position, rotation);
         return block;
     }
@@ -246,88 +234,6 @@ public class HexBlock
         }
 
         return (closestThisFace, closestOtherFace);
-    }
-
-    /// <summary>
-    /// Creates a weld joint between two blocks at their closest faces.
-    /// This rigidly connects the blocks together as if they were welded.
-    /// </summary>
-    /// <param name="world">The physics world</param>
-    /// <param name="blockA">The first block</param>
-    /// <param name="blockB">The second block</param>
-    /// <returns>The created weld joint, or null if the blocks cannot be connected</returns>
-    public static WeldJoint? ConnectBlocks(World world, HexBlock blockA, HexBlock blockB)
-    {
-        if (blockA.Body == null || blockB.Body == null || world == null)
-            return null;
-
-        // Find the closest faces
-        var (faceA, faceB) = blockA.FindClosestFaces(blockB);
-
-        // Get the world positions of the closest faces
-        Vector2 anchorA = blockA.GetFacePosition(faceA);
-        Vector2 anchorB = blockB.GetFacePosition(faceB);
-
-        float faceSeparation = Vector2.Distance(anchorA, anchorB);
-        float maxSeparation = blockA.Size * 0.25f;
-
-        if (faceSeparation > maxSeparation)
-            return null;
-
-        // Calculate the midpoint for the anchor
-        Vector2 anchorWorld = (anchorA + anchorB) * 0.5f;
-
-        // Convert world anchor to local coordinates for each body
-        Vector2 localAnchorA = blockA.Body.GetLocalPoint(anchorWorld);
-        Vector2 localAnchorB = blockB.Body.GetLocalPoint(anchorWorld);
-
-        // Create a weld joint at the closest faces
-        // WeldJoint is already rigid by design, no additional configuration needed
-        var joint = JointFactory.CreateWeldJoint(
-            world,
-            blockA.Body,
-            blockB.Body,
-            localAnchorA,
-            localAnchorB
-        );
-
-        joint.CollideConnected = false;
-
-        return joint;
-    }
-
-    /// <summary>
-    /// Creates a revolute (hinge) joint between two blocks at their closest faces.
-    /// This allows the blocks to rotate relative to each other.
-    /// </summary>
-    /// <param name="world">The physics world</param>
-    /// <param name="blockA">The first block</param>
-    /// <param name="blockB">The second block</param>
-    /// <returns>The created revolute joint, or null if the blocks cannot be connected</returns>
-    public static RevoluteJoint? ConnectBlocksWithHinge(World world, HexBlock blockA, HexBlock blockB)
-    {
-        if (blockA.Body == null || blockB.Body == null || world == null)
-            return null;
-
-        // Find the closest faces
-        var (faceA, faceB) = blockA.FindClosestFaces(blockB);
-
-        // Get the world positions of the closest faces
-        Vector2 anchorA = blockA.GetFacePosition(faceA);
-        Vector2 anchorB = blockB.GetFacePosition(faceB);
-
-        // Calculate the midpoint for the anchor
-        Vector2 anchorWorld = (anchorA + anchorB) * 0.5f;
-
-        // Create a revolute joint at the closest faces
-        var joint = JointFactory.CreateRevoluteJoint(
-            world,
-            blockA.Body,
-            blockB.Body,
-            anchorWorld
-        );
-
-        return joint;
     }
 }
 

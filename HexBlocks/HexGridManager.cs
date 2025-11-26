@@ -1,5 +1,5 @@
+using Chainbots.Interfaces;
 using Chainbots.Models;
-using Chainbots.Physics;
 using Genbox.VelcroPhysics.Dynamics;
 using Genbox.VelcroPhysics.Dynamics.Joints;
 using Microsoft.Xna.Framework;
@@ -13,15 +13,11 @@ public struct BlockConfiguration
 {
     public HexCoordinate Coordinate { get; }
     public bool IsAnchoredToGround { get; }
-    public List<HexCoordinate> ConnectedCoordinates { get; }
 
-    public BlockConfiguration(int q, int r, bool anchoredToGround, params (int q, int r)[] connectedCoords)
+    public BlockConfiguration(int q, int r, bool anchoredToGround)
     {
         Coordinate = new HexCoordinate(q, r);
         IsAnchoredToGround = anchoredToGround;
-        ConnectedCoordinates = connectedCoords
-            .Select(c => new HexCoordinate(c.q, c.r))
-            .ToList();
     }
 }
 
@@ -157,7 +153,6 @@ public class HexGridManager : IHexGridManager
                 _physicsWorld.World,
                 config.Coordinate,
                 _hexSize,
-                HexBlockType.Material,
                 isStatic: false
             );
 
@@ -178,7 +173,6 @@ public class HexGridManager : IHexGridManager
             var block = GetBlockByCoordinate(config.Coordinate);
             if (block == null) continue;
 
-            // Anchor to ground if specified
             if (config.IsAnchoredToGround)
             {
                 var joint = HexBlock.CreateGroundAnchorJoint(_physicsWorld.World, block, _groundBody);
@@ -187,64 +181,9 @@ public class HexGridManager : IHexGridManager
                     _groundAnchorJoints[block.Id] = joint;
                 }
             }
-
-            // Create links to connected blocks
-            foreach (var connectedCoordinate in config.ConnectedCoordinates)
-            {
-                var otherBlock = GetBlockByCoordinate(connectedCoordinate);
-                if (otherBlock == null) continue;
-                CreateLinkBetweenBlocks(block.Id, otherBlock.Id);
-            }
         }
     }
 
-    /// <summary>
-    /// Reusable method to create a link (weld joint) between two blocks by their IDs.
-    /// The joint connects the blocks at their closest faces using the new helper method.
-    /// </summary>
-    /// <param name="blockIdA">ID of the first block</param>
-    /// <param name="blockIdB">ID of the second block</param>
-    /// <returns>True if the link was created successfully, false otherwise</returns>
-    public bool CreateLinkBetweenBlocks(int blockIdA, int blockIdB)
-    {
-        var blockA = GetBlockById(blockIdA);
-        var blockB = GetBlockById(blockIdB);
-
-        if (blockA == null || blockB == null)
-        {
-            Console.WriteLine($"Cannot create link: Block #{blockIdA} or #{blockIdB} not found");
-            return false;
-        }
-
-        if (blockA.Body == null || blockB.Body == null)
-        {
-            Console.WriteLine($"Cannot create link: Block #{blockIdA} or #{blockIdB} has no physics body");
-            return false;
-        }
-
-        var normalizedKey = NormalizePair(blockIdA, blockIdB);
-        if (_blockLinkJoints.ContainsKey(normalizedKey))
-            return true;
-
-        // Use the new ConnectBlocks helper method which automatically finds and connects at closest faces
-        var joint = HexBlock.ConnectBlocks(_physicsWorld.World, blockA, blockB);
-
-        if (joint != null)
-        {
-            Console.WriteLine($"Created link between Block #{blockIdA} and Block #{blockIdB} at their closest faces");
-            _blockLinkJoints[normalizedKey] = joint;
-            return true;
-        }
-
-        Console.WriteLine($"Failed to create link between Block #{blockIdA} and Block #{blockIdB}");
-        return false;
-    }
-
-    /// <summary>
-    /// Gets a block by its ID.
-    /// </summary>
-    /// <param name="id">The block ID</param>
-    /// <returns>The HexBlock if found, null otherwise</returns>
     public HexBlock? GetBlockById(int id)
     {
         return _blocksById.TryGetValue(id, out var block) ? block : null;

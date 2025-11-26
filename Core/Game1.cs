@@ -1,7 +1,6 @@
 using Chainbots.HexBlocks;
-using Chainbots.Input;
+using Chainbots.Interfaces;
 using Chainbots.Models;
-using Chainbots.Physics;
 using Chainbots.Rendering;
 using Chainbots.UI;
 using Genbox.VelcroPhysics.Dynamics.Joints;
@@ -9,7 +8,6 @@ using Genbox.VelcroPhysics.MonoGame.DebugView;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
 
 namespace Chainbots.Core;
 
@@ -20,13 +18,13 @@ public class Game1 : Game
     private readonly IHexGridManager _hexGridManager;
     private readonly ICamera _camera;
     private readonly IInputHandler _inputHandler;
+    private readonly TextureStore _textureStore;
 
-    private SpriteBatch? _spriteBatch;
+    private SpriteBatch _spriteBatch;
     private DebugView? _debugView;
-    private Texture2D? _hexTexture;
-    private IToolbar? _toolbar;
-    private IHexRenderer? _hexRenderer;
-    private SpriteFont? _hudFont;
+    private IToolbar _toolbar;
+    private IHexRenderer _hexRenderer;
+    private SpriteFont _hudFont;
 
     private bool _isSimulationRunning = false;
     private HexBlock? _hoveredBlock = null;
@@ -43,13 +41,19 @@ public class Game1 : Game
         IPhysicsWorld physicsWorld,
         IHexGridManager hexGridManager,
         ICamera camera,
-        IInputHandler inputHandler)
+        IInputHandler inputHandler,
+        TextureStore textureStore,
+        IHexRenderer hexRenderer,
+        IToolbar toolbar)
     {
         _graphics = new GraphicsDeviceManager(this);
         _physicsWorld = physicsWorld;
         _hexGridManager = hexGridManager;
         _camera = camera;
         _inputHandler = inputHandler;
+        _textureStore = textureStore;
+        _hexRenderer = hexRenderer;
+        _toolbar = toolbar;
 
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
@@ -71,16 +75,15 @@ public class Game1 : Game
         InitializeSimulation();
 
         base.Initialize();
+        _textureStore.Init(_graphics);
+        _toolbar.Initialize(GraphicsDevice.Viewport.Width, 60, _hudFont);
+        _hexRenderer.Initialize(HexSize, PixelsPerMeter);
     }
 
     private void InitializeSimulation()
     {
         _physicsWorld.CreateGround();
         _hexGridManager.Initialize();
-        _physicsWorld.SetupCollisionGroups(
-            _hexGridManager.TargetBlocks,
-            _hexGridManager.MaterialBlocks
-        );
     }
 
     protected override void LoadContent()
@@ -88,27 +91,17 @@ public class Game1 : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
         // Create hexagon texture at higher resolution for better quality
-        _hexTexture = TextureFactory.CreateHexagonTexture(GraphicsDevice, 128);
+        
 
-        // Load font for UI
-        try
-        {
-            _hudFont = Content.Load<SpriteFont>("Fonts/Hud");
-        }
-        catch (Exception)
-        {
-            // Font loading failed, toolbar will work without text
-            _hudFont = null;
-        }
+        _hudFont = Content.Load<SpriteFont>("Fonts/Hud");
 
         // Initialize toolbar
-        _toolbar = new Toolbar(_hexTexture, GraphicsDevice.Viewport.Width, 60, _hudFont);
+        //_toolbar = new Toolbar(_textureStore.Hexagon, GraphicsDevice.Viewport.Width, 60, _hudFont);
         _toolbar.OnStart += OnSimulationStart;
         _toolbar.OnStop += OnSimulationStop;
         _toolbar.OnReset += OnSimulationReset;
 
-        // Initialize hex renderer
-        _hexRenderer = new HexRenderer(_hexTexture, _camera, HexSize, PixelsPerMeter);
+        //_hexRenderer = new HexRenderer(_camera, HexSize, PixelsPerMeter);
     }
 
     private void OnSimulationStart()
@@ -241,7 +234,7 @@ public class Game1 : Game
         // Dark grey background
         GraphicsDevice.Clear(new Color(30, 30, 30));
 
-        if (_spriteBatch == null || _hexTexture == null || _hexRenderer == null) return;
+        if (_spriteBatch == null || _textureStore.Hexagon == null || _hexRenderer == null) return;
 
         // Draw world elements (ground, target blocks, physics blocks)
         _spriteBatch.Begin(
@@ -347,7 +340,7 @@ public class Game1 : Game
         );
 
         // Create a simple background texture if we don't have one
-        if (_hexTexture != null)
+        if (_textureStore.Hexagon != null)
         {
             // Draw a semi-transparent dark background
             DrawRectangle(spriteBatch, backgroundRect, new Color(0, 0, 0, 200));
@@ -356,7 +349,6 @@ public class Game1 : Game
         // Draw the text
         spriteBatch.DrawString(_hudFont, infoText, infoPosition, Color.White);
     }
-
 
     private void DrawHoveredHex(SpriteBatch spriteBatch)
     {
@@ -370,11 +362,11 @@ public class Game1 : Game
         var hexCoor = HexCoordinate.FromPixel(mouseWorldPos, HexSize);
 
         var infoText = $"Q: {hexCoor.Q}; R: {hexCoor.R}";
-        
+
         spriteBatch.DrawString(_hudFont, infoText, mouseWorldPos, Color.White);
 
         var blockColor = new Color(200, 200, 200, 255); // Light grey for regular material blocks
-        _hexRenderer.DrawHexagonOutline(_spriteBatch, hexCoor, blockColor, true);
+        _hexRenderer.DrawHexagonOutline(_spriteBatch, hexCoor, blockColor);
     }
 
     private void DrawRectangle(SpriteBatch spriteBatch, Rectangle rect, Color color)

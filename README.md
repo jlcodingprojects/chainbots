@@ -28,7 +28,7 @@ The other examples have the same traits, albeit in a more abstract way for most 
 
 ## Why we cant make synthetic trees
 
-A synchronic perspective answers this quite simple. Trees are complex state machines which rely on immensely complex chemical interactions. 
+A synchronic perspective answers this quite easily. Trees are complex state machines which rely on immensely complex chemical interactions. 
 Even if we could build miniture machines that function like stem cells, the development of the tree itself depends on seemingly random interactions between components. The task of programming the interactions between the constituent parts (eg programming when a stem cell should differentiate, and programming the behaviours of the diverged cells) is very very complex.
 It relies heavily on the concept of emergence, that a set of individual parts each following a discrete set of behaviours can result in beautiful complex super-structures.
 
@@ -38,7 +38,7 @@ The individual cells act like state machines, and somehow the complex interactio
 
 - Understand organic chemistry well enough to build a vascular system (complex interactions with fluids, soft bodies)
 - Understand emergence well enough to build cells which can simultaneously travel through this transport system, find where they need to go, then do the right thing when they get there
-- Build complex cells which can under take many different goals in a complex system - including reversible actions
+- Reinvent metabolism
 
 So yeah about a thousand years away, give or take a couple orders of magnitude.
 

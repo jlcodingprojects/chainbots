@@ -5,6 +5,7 @@ using Genbox.VelcroPhysics.Factories;
 using Genbox.VelcroPhysics.Collision.Shapes;
 using Genbox.VelcroPhysics.Shared;
 using Chainbots.HexBlocks;
+using Chainbots.Interfaces;
 
 namespace Chainbots.Physics;
 
@@ -42,36 +43,6 @@ public class PhysicsWorld : IPhysicsWorld
         var groundFixture = GroundBody.CreateFixture(groundShape);
         groundFixture.Friction = 0.8f;
         groundFixture.Restitution = 0.2f;
-    }
-
-    public void SetupCollisionGroups(
-        List<HexBlock> targetBlocks,
-        List<HexBlock> materialBlocks)
-    {
-        // Set up collision categories and masks
-        // Target blocks: Category 0x0001 (only collide with nothing - visual only)
-        // Material blocks: Category 0x0002 (collide with each other and ground)
-        // Ground: Category 0x0008 (collide with material blocks)
-
-        foreach (var block in targetBlocks)
-        {
-            block.SetCollisionCategory(0x0001, 0x0000);
-        }
-
-        foreach (var block in materialBlocks)
-        {
-            block.SetCollisionCategory(0x0002, 0x0002 | 0x0008); // Collide with material and ground
-        }
-
-        // Set ground collision category
-        if (GroundBody != null)
-        {
-            foreach (var fixture in GroundBody.FixtureList)
-            {
-                fixture.CollisionCategories = (Genbox.VelcroPhysics.Collision.Filtering.Category)0x0008;
-                fixture.CollidesWith = (Genbox.VelcroPhysics.Collision.Filtering.Category)0x0002; // Only collide with material blocks
-            }
-        }
     }
 
     public void Update(float deltaTime)

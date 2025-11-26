@@ -1,41 +1,42 @@
-using System;
+using Chainbots.Models;
+using Chainbots.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Chainbots.Models;
+using System;
 
-namespace Chainbots.Rendering;
+namespace Chainbots.Interfaces;
 
-/// <summary>
-/// Handles all hexagon rendering operations.
-/// </summary>
 public class HexRenderer : IHexRenderer
 {
-    private readonly Texture2D _hexTexture;
+    private readonly TextureStore _textureStore;
     private readonly ICamera _camera;
-    private readonly float _hexSize;
-    private readonly float _pixelsPerMeter;
+    private float _hexSize;
+    private float _pixelsPerMeter;
 
-    public HexRenderer(Texture2D hexTexture, ICamera camera, float hexSize, float pixelsPerMeter)
+    public HexRenderer(TextureStore textureStore, ICamera camera)
     {
-        _hexTexture = hexTexture;
+        _textureStore = textureStore;
         _camera = camera;
+    }
+
+    public void Initialize(float hexSize, float pixelsPerMeter)
+    {
         _hexSize = hexSize;
         _pixelsPerMeter = pixelsPerMeter;
     }
 
-    public void DrawHexagonOutline(SpriteBatch spriteBatch, HexCoordinate coord, Color color, bool dotted)
+    public void DrawHexagonOutline(SpriteBatch spriteBatch, HexCoordinate coord, Color color)
     {
         Vector2 worldPos = coord.ToPixel(_hexSize);
-        DrawHexagonOutlineAtWorld(spriteBatch, worldPos, color, dotted);
+        DrawHexagonOutlineAtWorld(spriteBatch, worldPos, color);
     }
 
-    public void DrawHexagonOutlineAtWorld(SpriteBatch spriteBatch, Vector2 worldPos, Color color, bool dotted)
+    public void DrawHexagonOutlineAtWorld(SpriteBatch spriteBatch, Vector2 worldPos, Color color)
     {
         Vector2 screenPos = _camera.WorldToScreen(worldPos);
 
         float screenRadius = _hexSize * _pixelsPerMeter;
 
-        // Draw hexagon outline - match physics and texture orientation
         Vector2[] vertices = new Vector2[6];
         for (int i = 0; i < 6; i++)
         {
@@ -46,20 +47,12 @@ public class HexRenderer : IHexRenderer
             );
         }
 
-        // Draw lines between vertices
         for (int i = 0; i < 6; i++)
         {
             Vector2 start = vertices[i];
             Vector2 end = vertices[(i + 1) % 6];
 
-            if (dotted)
-            {
-                DrawDottedLine(spriteBatch, start, end, color, 5f);
-            }
-            else
-            {
-                DrawLine(spriteBatch, start, end, color, 2f);
-            }
+            DrawDottedLine(spriteBatch, start, end, color, 5f);
         }
     }
 
@@ -75,11 +68,11 @@ public class HexRenderer : IHexRenderer
         float screenRadius = _hexSize * _pixelsPerMeter;
 
         // Draw filled hexagon using the texture
-        Vector2 origin = new Vector2(_hexTexture.Width / 2f, _hexTexture.Height / 2f);
-        float scale = (screenRadius * 2f) / _hexTexture.Width;
+        Vector2 origin = new Vector2(_textureStore.Hexagon.Width / 2f, _textureStore.Hexagon.Height / 2f);
+        float scale = (screenRadius * 2f) / _textureStore.Hexagon.Width;
 
         spriteBatch.Draw(
-            _hexTexture,
+            _textureStore.Hexagon,
             screenPos,
             null,
             color,
@@ -98,12 +91,12 @@ public class HexRenderer : IHexRenderer
         float length = edge.Length();
 
         spriteBatch.Draw(
-            _hexTexture,
+            _textureStore.Hexagon,
             start,
             null,
             color,
             angle,
-            new Vector2(0, _hexTexture.Height / 2f),
+            new Vector2(0, _textureStore.Hexagon.Height / 2f),
             new Vector2(length, thickness),
             SpriteEffects.None,
             0f
@@ -121,13 +114,13 @@ public class HexRenderer : IHexRenderer
         {
             Vector2 dotPos = start + direction * distance;
             spriteBatch.Draw(
-                _hexTexture,
+                _textureStore.Hexagon,
                 dotPos,
                 null,
                 color,
                 0f,
-                new Vector2(_hexTexture.Width / 2f, _hexTexture.Height / 2f),
-                new Vector2(2f / _hexTexture.Width, 2f / _hexTexture.Height),
+                new Vector2(_textureStore.Hexagon.Width / 2f, _textureStore.Hexagon.Height / 2f),
+                new Vector2(2f / _textureStore.Hexagon.Width, 2f / _textureStore.Hexagon.Height),
                 SpriteEffects.None,
                 0f
             );
@@ -152,7 +145,7 @@ public class HexRenderer : IHexRenderer
         );
 
         spriteBatch.Draw(
-            _hexTexture,
+            _textureStore.Hexagon,
             groundRect,
             new Color(60, 60, 60, 255) // Slightly lighter than background
         );

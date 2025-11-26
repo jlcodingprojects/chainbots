@@ -1,8 +1,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Chainbots.Rendering;
 using Chainbots.HexBlocks;
 using System.Collections.Generic;
+using Chainbots.Interfaces;
 
 namespace Chainbots.Input
 {
