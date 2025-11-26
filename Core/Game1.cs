@@ -218,7 +218,7 @@ public class Game1 : Game
         }
 
         // Stop dragging
-        if (_inputHandler.IsMouseButtonReleased() && _draggedBlock != null)
+        if (_inputHandler.GetMouseEvent(MouseButton.Left, InputState.Released) && _draggedBlock != null)
         {
             if (_mouseJoint != null)
             {
