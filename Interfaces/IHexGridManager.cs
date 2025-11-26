@@ -8,12 +8,8 @@ public interface IHexGridManager
     List<HexBlock> MaterialBlocks { get; }
     void Initialize();
     void Clear();
-
-    /// <summary>
-    /// Gets a block by its ID.
-    /// </summary>
-    /// <param name="id">The block ID</param>
-    /// <returns>The HexBlock if found, null otherwise</returns>
     HexBlock? GetBlockById(int id);
+    void RemoveBlockById(int id);
+    void AddBlock(int q, int r, bool anchoredToGround);
 }
 

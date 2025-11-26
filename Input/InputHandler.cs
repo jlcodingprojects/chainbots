@@ -76,7 +76,7 @@ public class InputHandler : IInputHandler
         clickedBlock = null;
 
         // Check if left mouse button was just pressed
-        if (GetMouseEvent(MouseButton.Left, InputState.Pressed))
+        if (GetMouseEvent(MouseButton.Right, InputState.Pressed))
         {
             // Find the block under the mouse
             float minDistance = float.MaxValue;

@@ -3,9 +3,7 @@ using Chainbots.Models;
 using Genbox.VelcroPhysics.Dynamics;
 using Genbox.VelcroPhysics.Dynamics.Joints;
 using Microsoft.Xna.Framework;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Chainbots.HexBlocks;
 
@@ -116,6 +114,32 @@ public class HexGridManager : IHexGridManager
         CreateGroundBody();
         CreateMaterialBlocksFromConfiguration();
         CreateLinksFromConfiguration();
+    }
+
+    public void AddBlock(int q, int r, bool anchoredToGround)
+    {
+        BlockConfiguration config = new BlockConfiguration(q, r, anchoredToGround);
+        var materialBlock = new HexBlock(
+                _physicsWorld.World,
+                config.Coordinate,
+                _hexSize,
+                isStatic: false
+            );
+
+        materialBlock.SetPrecisePosition(GetWorldPosition(config.Coordinate));
+
+        MaterialBlocks.Add(materialBlock);
+        _blocksById[materialBlock.Id] = materialBlock;
+        _blocksByCoordinate[config.Coordinate] = materialBlock;
+    }
+
+    public void RemoveBlockById(int id)
+    {
+        if (_blocksById.TryGetValue(id, out var block))
+        {
+            MaterialBlocks.Remove(block);
+            _blocksById.Remove(id);
+        }
     }
 
     public void Clear()

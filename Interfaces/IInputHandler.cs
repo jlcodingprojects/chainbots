@@ -18,12 +18,10 @@ public enum MouseButton
 {
     Left,
     Right,
-    Middle,
 }
 
 public enum InputState
 {
     Pressed,
     Released,
-    Held,
 }

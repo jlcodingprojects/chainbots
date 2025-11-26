@@ -91,7 +91,7 @@ public class Game1 : Game
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
         // Create hexagon texture at higher resolution for better quality
-        
+
 
         _hudFont = Content.Load<SpriteFont>("Fonts/Hud");
 
@@ -159,13 +159,11 @@ public class Game1 : Game
         if (shouldExit)
             Exit();
 
-        // Update hover detection
         UpdateHoverDetection();
 
-        // Update drag and drop
         UpdateDragAndDrop();
+        UpdateAddAndRemove();
 
-        // Update toolbar
         _toolbar?.Update();
 
         // Fixed timestep physics update (only if simulation is running)
@@ -207,7 +205,6 @@ public class Game1 : Game
             }
         }
 
-        // Update dragging
         if (_draggedBlock != null && _mouseJoint != null)
         {
             var mouseState = Mouse.GetState();
@@ -217,8 +214,7 @@ public class Game1 : Game
             _mouseJoint.WorldAnchorB = mouseWorldPos;
         }
 
-        // Stop dragging
-        if (_inputHandler.GetMouseEvent(MouseButton.Left, InputState.Released) && _draggedBlock != null)
+        if (_inputHandler.GetMouseEvent(MouseButton.Right, InputState.Released) && _draggedBlock != null)
         {
             if (_mouseJoint != null)
             {
@@ -226,6 +222,26 @@ public class Game1 : Game
                 _mouseJoint = null;
             }
             _draggedBlock = null;
+        }
+    }
+
+    private void UpdateAddAndRemove()
+    {
+        if (!_inputHandler.GetMouseEvent(MouseButton.Left, InputState.Released))
+            return;
+
+        if (_hoveredBlock != null)
+        {
+            //delete
+            _hexGridManager.RemoveBlockById(_hoveredBlock.Id);
+        }
+        else
+        {
+            var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
+            Vector2 mouseScreenPos = new Vector2(mouseState.X, mouseState.Y);
+            Vector2 mouseWorldPos = _camera.ScreenToWorld(mouseScreenPos);
+            var hexCoor = HexCoordinate.FromPixel(mouseWorldPos, HexSize);
+            _hexGridManager.AddBlock(hexCoor.Q, hexCoor.R, false);
         }
     }
 
@@ -357,7 +373,6 @@ public class Game1 : Game
         var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
         Vector2 mouseScreenPos = new Vector2(mouseState.X, mouseState.Y);
         Vector2 mouseWorldPos = _camera.ScreenToWorld(mouseScreenPos);
-
 
         var hexCoor = HexCoordinate.FromPixel(mouseWorldPos, HexSize);
 
