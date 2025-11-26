@@ -1,5 +1,6 @@
 using Chainbots.HexBlocks;
 using Chainbots.Input;
+using Chainbots.Models;
 using Chainbots.Physics;
 using Chainbots.Rendering;
 using Chainbots.UI;
@@ -301,6 +302,7 @@ public class Game1 : Game
 
         // Draw hovered block info
         DrawHoveredBlockInfo(_spriteBatch);
+        DrawHoveredHex(_spriteBatch);
 
         _spriteBatch.End();
 
@@ -353,6 +355,26 @@ public class Game1 : Game
 
         // Draw the text
         spriteBatch.DrawString(_hudFont, infoText, infoPosition, Color.White);
+    }
+
+
+    private void DrawHoveredHex(SpriteBatch spriteBatch)
+    {
+        if (_hudFont == null || _hexRenderer is null || _spriteBatch is null) return;
+
+        var mouseState = Microsoft.Xna.Framework.Input.Mouse.GetState();
+        Vector2 mouseScreenPos = new Vector2(mouseState.X, mouseState.Y);
+        Vector2 mouseWorldPos = _camera.ScreenToWorld(mouseScreenPos);
+
+
+        var hexCoor = HexCoordinate.FromPixel(mouseWorldPos, HexSize);
+
+        var infoText = $"Q: {hexCoor.Q}; R: {hexCoor.R}";
+        
+        spriteBatch.DrawString(_hudFont, infoText, mouseWorldPos, Color.White);
+
+        var blockColor = new Color(200, 200, 200, 255); // Light grey for regular material blocks
+        _hexRenderer.DrawHexagonOutline(_spriteBatch, hexCoor, blockColor, true);
     }
 
     private void DrawRectangle(SpriteBatch spriteBatch, Rectangle rect, Color color)

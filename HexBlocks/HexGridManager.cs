@@ -32,7 +32,7 @@ public class HexGridManager : IHexGridManager
 
     private readonly IPhysicsWorld _physicsWorld;
     private readonly float _hexSize;
-    private Body? _groundBody; 
+    private Body? _groundBody;
     private Vector2 _worldOffset = Vector2.Zero;
 
     private readonly Dictionary<int, HexBlock> _blocksById = new();
@@ -54,10 +54,6 @@ public class HexGridManager : IHexGridManager
         new BlockConfiguration(0, 8, anchoredToGround: true),
         new BlockConfiguration(2, 7, anchoredToGround: true),
         new BlockConfiguration(4, 6, anchoredToGround: true),
-        new BlockConfiguration(6,5, anchoredToGround: true),
-        new BlockConfiguration(8, 4, anchoredToGround: true),
-        new BlockConfiguration(10, 3, anchoredToGround: true),
-        new BlockConfiguration(12, 2, anchoredToGround: true),
 
         // features
         // block on top
@@ -69,6 +65,44 @@ public class HexGridManager : IHexGridManager
         // top and between
         new BlockConfiguration(-10, 12, anchoredToGround: false),
         new BlockConfiguration(-9, 12, anchoredToGround: false),
+
+        new BlockConfiguration(-6, 10, anchoredToGround: false),
+        new BlockConfiguration(-5, 10, anchoredToGround: false),
+        new BlockConfiguration(-4, 9, anchoredToGround: false),
+
+        new BlockConfiguration(-2, 8, anchoredToGround: false),
+        new BlockConfiguration(-2, 7, anchoredToGround: false),
+
+        new BlockConfiguration(0, 7, anchoredToGround: false),
+        new BlockConfiguration(0, 6, anchoredToGround: false),
+
+        new BlockConfiguration(2, 6, anchoredToGround: false),
+        new BlockConfiguration(2,5, anchoredToGround: false),
+        new BlockConfiguration(1,7, anchoredToGround: false),
+        new BlockConfiguration(1,6, anchoredToGround: false),
+        new BlockConfiguration(3,6, anchoredToGround: false),
+        new BlockConfiguration(4, 5, anchoredToGround: false),
+
+        //floating
+        new BlockConfiguration(1,5, anchoredToGround: false),
+        new BlockConfiguration(2,4, anchoredToGround: false),
+        new BlockConfiguration(3,3, anchoredToGround: false),
+        new BlockConfiguration(4,3, anchoredToGround: false),
+        new BlockConfiguration(4,2, anchoredToGround: false),
+        new BlockConfiguration(5,2, anchoredToGround: false),
+        new BlockConfiguration(6,1, anchoredToGround: false),
+
+        //reaching up
+        new BlockConfiguration(6,0, anchoredToGround: false),
+        new BlockConfiguration(6,-1, anchoredToGround: false),
+        new BlockConfiguration(7, 0, anchoredToGround: false),
+        new BlockConfiguration(7,-1, anchoredToGround: false),
+        new BlockConfiguration(5,-1, anchoredToGround: false),
+        new BlockConfiguration(6,-2, anchoredToGround: false),
+        new BlockConfiguration(4,-1, anchoredToGround: false),
+        new BlockConfiguration(3, 0, anchoredToGround: false),
+        new BlockConfiguration(3,-1, anchoredToGround: false),
+
     ];
 
     public HexGridManager(IPhysicsWorld physicsWorld, float hexSize)
