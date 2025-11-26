@@ -80,34 +80,6 @@ public class HexBlock
         return vertices;
     }
 
-    /// <summary>
-    /// Creates an anchor joint between two hex blocks.
-    /// The blocks are connected through their centers.
-    /// </summary>
-    public static WeldJoint? CreateAnchorJoint(World world, HexBlock blockA, HexBlock blockB)
-    {
-        if (blockA.Body == null || blockB.Body == null || world == null)
-            return null;
-        
-        // Connect blocks at their centers using local coordinates
-        // Vector2.Zero represents the center of each body in local space
-        var joint = JointFactory.CreateWeldJoint(
-            world,
-            blockA.Body, 
-            blockB.Body, 
-            Vector2.Zero,  // Local anchor on blockA (at its center)
-            Vector2.Zero   // Local anchor on blockB (at its center)
-        );
-        
-        joint.CollideConnected = false;
-        
-        return joint;
-    }
-
-    /// <summary>
-    /// Creates an anchor joint between a hex block and a static ground body.
-    /// The block is anchored at its center to a point on the ground directly below it.
-    /// </summary>
     public static WeldJoint? CreateGroundAnchorJoint(World world, HexBlock block, Body groundBody)
     {
         if (block.Body == null || groundBody == null || world == null)
@@ -132,20 +104,6 @@ public class HexBlock
         joint.CollideConnected = false;
         
         return joint;
-    }
-
-    /// <summary>
-    /// Sets the collision category and mask for this block.
-    /// </summary>
-    public void SetCollisionCategory(short category, short collidesWith)
-    {
-        if (Body == null) return;
-        
-        foreach (var fixture in Body.FixtureList)
-        {
-            fixture.CollisionCategories = (Category)category;
-            fixture.CollidesWith = (Category)collidesWith;
-        }
     }
 
     /// <summary>
@@ -208,32 +166,32 @@ public class HexBlock
     /// </summary>
     /// <param name="other">The other hex block</param>
     /// <returns>A tuple containing (thisFaceIndex, otherFaceIndex)</returns>
-    public (int thisFace, int otherFace) FindClosestFaces(HexBlock other)
-    {
-        float minDistance = float.MaxValue;
-        int closestThisFace = 0;
-        int closestOtherFace = 0;
+    //public (int thisFace, int otherFace) FindClosestFaces(HexBlock other)
+    //{
+    //    float minDistance = float.MaxValue;
+    //    int closestThisFace = 0;
+    //    int closestOtherFace = 0;
 
-        // Check all combinations of faces
-        for (int i = 0; i < 6; i++)
-        {
-            Vector2 thisFacePos = GetFacePosition(i);
+    //    // Check all combinations of faces
+    //    for (int i = 0; i < 6; i++)
+    //    {
+    //        Vector2 thisFacePos = GetFacePosition(i);
             
-            for (int j = 0; j < 6; j++)
-            {
-                Vector2 otherFacePos = other.GetFacePosition(j);
-                float distance = Vector2.Distance(thisFacePos, otherFacePos);
+    //        for (int j = 0; j < 6; j++)
+    //        {
+    //            Vector2 otherFacePos = other.GetFacePosition(j);
+    //            float distance = Vector2.Distance(thisFacePos, otherFacePos);
                 
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    closestThisFace = i;
-                    closestOtherFace = j;
-                }
-            }
-        }
+    //            if (distance < minDistance)
+    //            {
+    //                minDistance = distance;
+    //                closestThisFace = i;
+    //                closestOtherFace = j;
+    //            }
+    //        }
+    //    }
 
-        return (closestThisFace, closestOtherFace);
-    }
+    //    return (closestThisFace, closestOtherFace);
+    //}
 }
 

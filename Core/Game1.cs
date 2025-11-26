@@ -90,18 +90,11 @@ public class Game1 : Game
     {
         _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-        // Create hexagon texture at higher resolution for better quality
-
-
         _hudFont = Content.Load<SpriteFont>("Fonts/Hud");
 
-        // Initialize toolbar
-        //_toolbar = new Toolbar(_textureStore.Hexagon, GraphicsDevice.Viewport.Width, 60, _hudFont);
         _toolbar.OnStart += OnSimulationStart;
         _toolbar.OnStop += OnSimulationStop;
         _toolbar.OnReset += OnSimulationReset;
-
-        //_hexRenderer = new HexRenderer(_camera, HexSize, PixelsPerMeter);
     }
 
     private void OnSimulationStart()

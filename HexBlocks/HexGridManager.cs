@@ -21,7 +21,6 @@ public struct BlockConfiguration
 
 public class HexGridManager : IHexGridManager
 {
-    public List<HexBlock> TargetBlocks { get; }
     public List<HexBlock> MaterialBlocks { get; }
 
     private readonly IPhysicsWorld _physicsWorld;
@@ -104,7 +103,6 @@ public class HexGridManager : IHexGridManager
         _physicsWorld = physicsWorld;
         _hexSize = hexSize;
 
-        TargetBlocks = new List<HexBlock>();
         MaterialBlocks = new List<HexBlock>();
     }
 
@@ -144,7 +142,6 @@ public class HexGridManager : IHexGridManager
 
     public void Clear()
     {
-        TargetBlocks.Clear();
         MaterialBlocks.Clear();
         _blocksById.Clear();
         _blocksByCoordinate.Clear();
