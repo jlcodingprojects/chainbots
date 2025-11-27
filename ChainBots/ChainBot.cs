@@ -18,6 +18,18 @@ public struct ChainBotCellConfiguration
     }
 }
 
+public struct CellLink
+{
+    public int CellAId;
+    public int CellBId;
+    public int CellAVertexIndex;
+    public int CellBVertexIndex;
+
+    public RevoluteJoint? Joint;
+}
+
+
+
 public class ChainBot
 {
     public List<ChainBotCell> Cells { get; }
@@ -31,12 +43,10 @@ public class ChainBot
     private readonly Dictionary<HexCoordinate, ChainBotCell> _blocksByCoordinate = new();
     private readonly Dictionary<(int first, int second), WeldJoint> _blockLinkJoints = new();
 
-    private static readonly ChainBotCellConfiguration[] InitialBlockLayout =
-    [
-        new ChainBotCellConfiguration(-5, 0),
-        new ChainBotCellConfiguration(-6, 0),
+    public List<CellLink> CellLinks { get; } = new List<CellLink>();
 
-    ];
+
+    private readonly ChainBotCellConfiguration initialCoordinate = new ChainBotCellConfiguration(14, 1);
 
     public ChainBot(IPhysicsWorld physicsWorld, float hexSize)
     {
@@ -50,24 +60,24 @@ public class ChainBot
     {
         Clear();
         CreateMaterialBlocksFromConfiguration();
-        CreateLinksFromConfiguration();
+        //CreateLinksFromConfiguration();
     }
 
-    public void AddBlock(int q, int r)
-    {
-        ChainBotCellConfiguration config = new ChainBotCellConfiguration(q, r);
-        var materialBlock = new ChainBotCell(
-                _physicsWorld.World,
-                config.Coordinate,
-                _hexSize * 0.5f
-            );
+    //public void AddBlock(int q, int r)
+    //{
+    //    ChainBotCellConfiguration config = new ChainBotCellConfiguration(q, r);
+    //    var materialBlock = new ChainBotCell(
+    //            _physicsWorld.World,
+    //            config.Coordinate,
+    //            _hexSize * 0.5f
+    //        );
 
-        materialBlock.SetPrecisePosition(GetWorldPosition(config.Coordinate));
+    //    materialBlock.SetPrecisePosition(GetWorldPosition(config.Coordinate));
 
-        Cells.Add(materialBlock);
-        _blocksById[materialBlock.Id] = materialBlock;
-        _blocksByCoordinate[config.Coordinate] = materialBlock;
-    }
+    //    Cells.Add(materialBlock);
+    //    _blocksById[materialBlock.Id] = materialBlock;
+    //    _blocksByCoordinate[config.Coordinate] = materialBlock;
+    //}
 
     public void RemoveBlockById(int id)
     {
@@ -90,70 +100,73 @@ public class ChainBot
         ChainBotCell.ResetIds();
     }
 
-    private void CreateGroundBody()
-    {
-        _groundBody = _physicsWorld.GroundBody;
-        if (_groundBody != null)
-        {
-            float baseY = _groundBody.Position.Y - (_hexSize + 0.02f);
-            //_worldOffset = new Vector2(0f, baseY);
-        }
-        else
-        {
-            //_worldOffset = Vector2.Zero;
-        }
-    }
-
     private void CreateMaterialBlocksFromConfiguration()
     {
-        foreach (var config in InitialBlockLayout)
+        Vector2 initialPosition = initialCoordinate.Coordinate.ToPixel(_hexSize * 0.5f);
+        Vector2 position = initialPosition;
+
+        for (int i = 0; i < 12; i++)
         {
             var materialBlock = new ChainBotCell(
                 _physicsWorld.World,
-                config.Coordinate,
+                position,
                 _hexSize * 0.5f
             );
 
-            materialBlock.SetPrecisePosition(GetWorldPosition(config.Coordinate));
+            materialBlock.SetPrecisePosition(position + _worldOffset);
 
             Cells.Add(materialBlock);
             _blocksById[materialBlock.Id] = materialBlock;
-            _blocksByCoordinate[config.Coordinate] = materialBlock;
+
+            position.X += _hexSize;
         }
 
-        _blocksById[0].SetState(new CellState
+        for (int i = 0; i < 11; i++)
         {
-            E0 = Polarity.Positive,
-            E1 = Polarity.Positive,
-            E2 = Polarity.Positive,
+            RevoluteJoint joint = new RevoluteJoint(
+            _blocksById[i].Body,
+            _blocksById[i + 1].Body,
+            new Vector2(_hexSize * 0.5f, _hexSize * 0.3f),
+            new Vector2(_hexSize * -0.5f, _hexSize * 0.3f));
 
-            V0 = Polarity.Positive,
-            V1 = Polarity.Off,
-            V2 = Polarity.Off
-        });
+            joint.MotorEnabled = true;
+            joint.MaxMotorTorque = 10f;
 
-        _blocksById[1].SetState(new CellState
-        {
-            E0 = Polarity.Positive,
-            E1 = Polarity.Positive,
-            E2 = Polarity.Positive,
+            if (i < 6)
+            {
+                joint.MotorSpeed = -0.5f;
 
-            V0 = Polarity.Negative,
-            V1 = Polarity.Off,
-            V2 = Polarity.Off
-        });
-    }
+            }
+            else
+            {
+                joint.MotorSpeed = -0.5f;
 
-    private void CreateLinksFromConfiguration()
-    {
-        if (_groundBody == null) return;
+            }
 
-        foreach (var config in InitialBlockLayout)
-        {
-            var block = GetBlockByCoordinate(config.Coordinate);
-            if (block == null) continue;
+            _physicsWorld.World.AddJoint(joint);
+
+            CellLinks.Add(new CellLink
+            {
+                CellAId = Cells[i].Id,
+                CellBId = Cells[i + 1].Id,
+                CellAVertexIndex = 2,
+                CellBVertexIndex = 3,
+                Joint = joint,
+            });
         }
+
     }
+
+    //private void CreateLinksFromConfiguration()
+    //{
+    //    if (_groundBody == null) return;
+
+    //    foreach (var config in InitialBlockLayout)
+    //    {
+    //        var block = GetBlockByCoordinate(config.Coordinate);
+    //        if (block == null) continue;
+    //    }
+    //}
 
     public ChainBotCell? GetBlockById(int id)
     {

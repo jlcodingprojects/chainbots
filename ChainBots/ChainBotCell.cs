@@ -1,42 +1,35 @@
 using Chainbots.Models;
 using Genbox.VelcroPhysics.Collision.Shapes;
 using Genbox.VelcroPhysics.Dynamics;
+using Genbox.VelcroPhysics.Dynamics.Joints;
 using Genbox.VelcroPhysics.Factories;
 using Genbox.VelcroPhysics.Shared;
 using Microsoft.Xna.Framework;
 using System;
+using System.Collections.Generic;
 
 namespace Chainbots.ChainBots;
 
-public enum Polarity
+public enum MotorState
 {
-    Positive,
-    Negative,
+    Forward,
+    Backward,
     Off,
 }
 
-public enum PointType
-{
-    Edge,
-    Vertex,
-}
 
 public struct CellState
 {
-    public Polarity V0;
-    public Polarity V1;
-    public Polarity V2;
-
-    public Polarity E0;
-    public Polarity E1;
-    public Polarity E2;
+    public MotorState V0;
+    public MotorState V1;
+    public MotorState V2;
 }
+
 
 public class ChainBotCell
 {
     private static int _nextId = 0;
     public int Id { get; }
-    public HexCoordinate Coordinate { get; }
     public Body Body { get; private set; }
     public float Size { get; }
 
@@ -49,13 +42,10 @@ public class ChainBotCell
         _nextId = 0;
     }
 
-    public ChainBotCell(World world, HexCoordinate coordinate, float size)
+    public ChainBotCell(World world, Vector2 position, float size)
     {
         Id = _nextId++;
-        Coordinate = coordinate;
         Size = size;
-
-        Vector2 position = coordinate.ToPixel(size);
 
         Body = BodyFactory.CreateBody(world, position, 0f, BodyType.Dynamic);
 
@@ -70,6 +60,7 @@ public class ChainBotCell
         var fixture = Body.CreateFixture(shape);
         fixture.Friction = 0.1f;
         fixture.Restitution = 0.00f;
+
     }
 
     private Vertices CreateTriangleVerticies(float radius)

@@ -2,7 +2,6 @@ using Chainbots.ChainBots;
 using Chainbots.HexBlocks;
 using Chainbots.Interfaces;
 using Chainbots.Models;
-using Chainbots.Physics;
 using Chainbots.Rendering;
 using Chainbots.UI;
 using Genbox.VelcroPhysics.Dynamics.Joints;
@@ -22,7 +21,7 @@ public class Game1 : Game
     private readonly ICamera _camera;
     private readonly IInputHandler _inputHandler;
     private readonly TextureStore _textureStore;
-    private readonly MagnetForceApplier _magnetForceApplier;
+    //private readonly MagnetForceApplier _magnetForceApplier;
 
     private SpriteBatch _spriteBatch;
     private DebugView? _debugView;
@@ -61,7 +60,7 @@ public class Game1 : Game
         _hexRenderer = hexRenderer;
         _toolbar = toolbar;
 
-        _magnetForceApplier = new MagnetForceApplier();
+        //_magnetForceApplier = new MagnetForceApplier();
 
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
@@ -172,7 +171,7 @@ public class Game1 : Game
         if (_isSimulationRunning)
         {
             _physicsWorld.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
-            _magnetForceApplier.ApplyForces(_chainBot.Cells);
+            //_magnetForceApplier.ApplyForces(_chainBot.Cells);
         }
 
         _inputHandler.EndFrame();
@@ -256,7 +255,9 @@ public class Game1 : Game
         if (_spriteBatch == null || _textureStore.Hexagon == null || _hexRenderer == null) return;
 
         // Draw world elements (ground, target blocks, physics blocks)
-        _spriteBatch.Begin(
+        if (!_isSimulationRunning)
+        {
+            _spriteBatch.Begin(
             sortMode: SpriteSortMode.Deferred,
             blendState: BlendState.AlphaBlend,
             samplerState: SamplerState.AnisotropicClamp, // Better quality for scaling
@@ -264,68 +265,71 @@ public class Game1 : Game
             rasterizerState: null
         );
 
-        // Draw ground
-        if (_physicsWorld.GroundBody != null)
-        {
-            _hexRenderer.DrawGround(_spriteBatch, _physicsWorld.GroundBody.Position);
+
+
+            // Draw ground
+            if (_physicsWorld.GroundBody != null)
+            {
+                _hexRenderer.DrawGround(_spriteBatch, _physicsWorld.GroundBody.Position);
+            }
+
+            _spriteBatch.End();
+
+            // Draw physics blocks as sprites
+            _spriteBatch.Begin(
+                sortMode: SpriteSortMode.Deferred,
+                blendState: BlendState.AlphaBlend,
+                samplerState: SamplerState.AnisotropicClamp, // Better quality
+                depthStencilState: null,
+                rasterizerState: null
+            );
+
+            // Draw material blocks
+            foreach (var block in _hexGridManager.MaterialBlocks)
+            {
+                if (block.Body == null) continue; // Skip blocks without physics bodies
+
+                // Use different colors for different block states
+                Color blockColor;
+                if (block == _draggedBlock)
+                    blockColor = new Color(255, 200, 100, 255); // Orange for dragged block
+                else if (block.IsAnchoredToGround)
+                    blockColor = new Color(100, 150, 200, 255); // Blue for anchored blocks
+                else
+                    blockColor = new Color(200, 200, 200, 255); // Light grey for regular material blocks
+
+                _hexRenderer.DrawHexagonFilledAtWorld(_spriteBatch, block.Body.Position, blockColor);
+            }
+
+            // draw chainbot triangles
+            foreach (var cell in _chainBot.Cells)
+            {
+                Color cellColour = new Color(200, 200, 200, 255); // Light grey for regular material blocks
+
+                _hexRenderer.DrawTriangleFilledAtWorld(_spriteBatch, cell.Body.Position, cellColour);
+            }
+
+            _spriteBatch.End();
+
+            // Draw UI elements on top
+            _spriteBatch.Begin(
+                sortMode: SpriteSortMode.Deferred,
+                blendState: BlendState.AlphaBlend,
+                samplerState: SamplerState.LinearClamp,
+                depthStencilState: null,
+                rasterizerState: null
+            );
+
+            // Draw toolbar
+            _toolbar?.Draw(_spriteBatch);
+
+            // Draw hovered block info
+            DrawHoveredBlockInfo(_spriteBatch);
+            DrawHoveredHex(_spriteBatch);
+
+            _spriteBatch.End();
+
         }
-
-        _spriteBatch.End();
-
-        // Draw physics blocks as sprites
-        _spriteBatch.Begin(
-            sortMode: SpriteSortMode.Deferred,
-            blendState: BlendState.AlphaBlend,
-            samplerState: SamplerState.AnisotropicClamp, // Better quality
-            depthStencilState: null,
-            rasterizerState: null
-        );
-
-        // Draw material blocks
-        foreach (var block in _hexGridManager.MaterialBlocks)
-        {
-            if (block.Body == null) continue; // Skip blocks without physics bodies
-
-            // Use different colors for different block states
-            Color blockColor;
-            if (block == _draggedBlock)
-                blockColor = new Color(255, 200, 100, 255); // Orange for dragged block
-            else if (block.IsAnchoredToGround)
-                blockColor = new Color(100, 150, 200, 255); // Blue for anchored blocks
-            else
-                blockColor = new Color(200, 200, 200, 255); // Light grey for regular material blocks
-
-            _hexRenderer.DrawHexagonFilledAtWorld(_spriteBatch, block.Body.Position, blockColor);
-        }
-
-        // draw chainbot triangles
-        foreach (var cell in _chainBot.Cells)
-        {
-            Color cellColour = new Color(200, 200, 200, 255); // Light grey for regular material blocks
-
-            _hexRenderer.DrawTriangleFilledAtWorld(_spriteBatch, cell.Body.Position, cellColour);
-        }
-
-        _spriteBatch.End();
-
-        // Draw UI elements on top
-        _spriteBatch.Begin(
-            sortMode: SpriteSortMode.Deferred,
-            blendState: BlendState.AlphaBlend,
-            samplerState: SamplerState.LinearClamp,
-            depthStencilState: null,
-            rasterizerState: null
-        );
-
-        // Draw toolbar
-        _toolbar?.Draw(_spriteBatch);
-
-        // Draw hovered block info
-        DrawHoveredBlockInfo(_spriteBatch);
-        DrawHoveredHex(_spriteBatch);
-
-        _spriteBatch.End();
-
         // Draw physics debug view (if available)
         _debugView?.RenderDebugData(_camera.Projection, _camera.View);
 
