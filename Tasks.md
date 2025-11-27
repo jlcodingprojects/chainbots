@@ -4,8 +4,7 @@
 - Add AI usage statement
 
 ## Chainbots
-- Render chainbot cells (triangles)
-- Add chainbot cell joints (magnetic corner joints, magnetic face actuator type joints?)
+- Tried magnetic joints and they dont work well. Will use fixed joints for verticies, try magnetic for edges
 - Add chainbot cell internal components (FSM, Timer)
   -  FSM has 3 corners and 3 faces. Each can be set to ON or OFF (north or south effectively)
 
