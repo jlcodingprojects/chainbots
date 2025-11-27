@@ -10,6 +10,9 @@ public interface IHexRenderer
     void DrawHexagonOutlineAtWorld(SpriteBatch spriteBatch, Vector2 worldPos, Color color);
     void DrawHexagonFilled(SpriteBatch spriteBatch, HexCoordinate coord, Color color);
     void DrawHexagonFilledAtWorld(SpriteBatch spriteBatch, Vector2 worldPos, Color color);
+
+    void DrawTriangleFilledAtWorld(SpriteBatch spriteBatch, Vector2 worldPos, Color color);
+
     void DrawGround(SpriteBatch spriteBatch, Vector2 groundPosition);
     void Initialize(float hexSize, float pixelsPerMeter);
 }

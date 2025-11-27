@@ -33,14 +33,8 @@ public class ChainBot
 
     private static readonly ChainBotCellConfiguration[] InitialBlockLayout =
     [
-        // ground array
-        new ChainBotCellConfiguration(-16, 16),
-        new ChainBotCellConfiguration(-14, 15),
-        new ChainBotCellConfiguration(-12, 14),
-        new ChainBotCellConfiguration(-10, 13),
-        new ChainBotCellConfiguration(-8, 12),
-        new ChainBotCellConfiguration(-6, 11),
-        new ChainBotCellConfiguration(-4, 10),
+        new ChainBotCellConfiguration(-5, 0),
+        new ChainBotCellConfiguration(-6, 0),
 
     ];
 
@@ -65,7 +59,7 @@ public class ChainBot
         var materialBlock = new ChainBotCell(
                 _physicsWorld.World,
                 config.Coordinate,
-                _hexSize
+                _hexSize * 0.5f
             );
 
         materialBlock.SetPrecisePosition(GetWorldPosition(config.Coordinate));
@@ -117,7 +111,7 @@ public class ChainBot
             var materialBlock = new ChainBotCell(
                 _physicsWorld.World,
                 config.Coordinate,
-                _hexSize
+                _hexSize * 0.5f
             );
 
             materialBlock.SetPrecisePosition(GetWorldPosition(config.Coordinate));
@@ -126,6 +120,28 @@ public class ChainBot
             _blocksById[materialBlock.Id] = materialBlock;
             _blocksByCoordinate[config.Coordinate] = materialBlock;
         }
+
+        _blocksById[0].SetState(new CellState
+        {
+            E0 = Polarity.Positive,
+            E1 = Polarity.Positive,
+            E2 = Polarity.Positive,
+
+            V0 = Polarity.Positive,
+            V1 = Polarity.Off,
+            V2 = Polarity.Off
+        });
+
+        _blocksById[1].SetState(new CellState
+        {
+            E0 = Polarity.Positive,
+            E1 = Polarity.Positive,
+            E2 = Polarity.Positive,
+
+            V0 = Polarity.Negative,
+            V1 = Polarity.Off,
+            V2 = Polarity.Off
+        });
     }
 
     private void CreateLinksFromConfiguration()

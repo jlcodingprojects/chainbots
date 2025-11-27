@@ -1,6 +1,8 @@
+using Chainbots.ChainBots;
 using Chainbots.HexBlocks;
 using Chainbots.Interfaces;
 using Chainbots.Models;
+using Chainbots.Physics;
 using Chainbots.Rendering;
 using Chainbots.UI;
 using Genbox.VelcroPhysics.Dynamics.Joints;
@@ -16,9 +18,11 @@ public class Game1 : Game
     private readonly GraphicsDeviceManager _graphics;
     private readonly IPhysicsWorld _physicsWorld;
     private readonly IHexGridManager _hexGridManager;
+    private readonly ChainBot _chainBot;
     private readonly ICamera _camera;
     private readonly IInputHandler _inputHandler;
     private readonly TextureStore _textureStore;
+    private readonly MagnetForceApplier _magnetForceApplier;
 
     private SpriteBatch _spriteBatch;
     private DebugView? _debugView;
@@ -40,6 +44,7 @@ public class Game1 : Game
     public Game1(
         IPhysicsWorld physicsWorld,
         IHexGridManager hexGridManager,
+        ChainBot chainBot,
         ICamera camera,
         IInputHandler inputHandler,
         TextureStore textureStore,
@@ -49,11 +54,14 @@ public class Game1 : Game
         _graphics = new GraphicsDeviceManager(this);
         _physicsWorld = physicsWorld;
         _hexGridManager = hexGridManager;
+        _chainBot = chainBot;
         _camera = camera;
         _inputHandler = inputHandler;
         _textureStore = textureStore;
         _hexRenderer = hexRenderer;
         _toolbar = toolbar;
+
+        _magnetForceApplier = new MagnetForceApplier();
 
         Content.RootDirectory = "Content";
         IsMouseVisible = true;
@@ -84,6 +92,7 @@ public class Game1 : Game
     {
         _physicsWorld.CreateGround();
         _hexGridManager.Initialize();
+        _chainBot.Initialize();
     }
 
     protected override void LoadContent()
@@ -163,6 +172,7 @@ public class Game1 : Game
         if (_isSimulationRunning)
         {
             _physicsWorld.Update((float)gameTime.ElapsedGameTime.TotalSeconds);
+            _magnetForceApplier.ApplyForces(_chainBot.Cells);
         }
 
         _inputHandler.EndFrame();
@@ -286,6 +296,14 @@ public class Game1 : Game
                 blockColor = new Color(200, 200, 200, 255); // Light grey for regular material blocks
 
             _hexRenderer.DrawHexagonFilledAtWorld(_spriteBatch, block.Body.Position, blockColor);
+        }
+
+        // draw chainbot triangles
+        foreach (var cell in _chainBot.Cells)
+        {
+            Color cellColour = new Color(200, 200, 200, 255); // Light grey for regular material blocks
+
+            _hexRenderer.DrawTriangleFilledAtWorld(_spriteBatch, cell.Body.Position, cellColour);
         }
 
         _spriteBatch.End();

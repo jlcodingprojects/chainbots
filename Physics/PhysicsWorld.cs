@@ -9,9 +9,6 @@ using Chainbots.Interfaces;
 
 namespace Chainbots.Physics;
 
-/// <summary>
-/// Manages the VelcroPhysics world and physics bodies.
-/// </summary>
 public class PhysicsWorld : IPhysicsWorld
 {
     public World World { get; private set; }
@@ -22,8 +19,9 @@ public class PhysicsWorld : IPhysicsWorld
 
     public PhysicsWorld()
     {
-        // Initialize physics world with gravity
-        World = new World(new Vector2(0f, 9.8f)); // 9.8 m/s^2 gravity
+        // zero gravity for testing
+        //World = new World(new Vector2(0f, 0f)); 
+        World = new World(new Vector2(0f, 9.8f));
     }
 
     public void CreateGround()

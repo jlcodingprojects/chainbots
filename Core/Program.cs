@@ -1,3 +1,4 @@
+using Chainbots.ChainBots;
 using Chainbots.HexBlocks;
 using Chainbots.Input;
 using Chainbots.Interfaces;
@@ -11,7 +12,7 @@ namespace Chainbots.Core;
 
 public static class Program
 {
-    private const float HexSize = 0.5f;
+    public const float HexSize = 0.5f;
     private const float PixelsPerMeter = 60f;
 
     [STAThread]
@@ -31,11 +32,19 @@ public static class Program
     {
         services.AddSingleton<IPhysicsWorld, PhysicsWorld>();
         services.AddSingleton<ICamera>(sp => new Camera(PixelsPerMeter));
+
+        services.AddSingleton<ChainBot>(sp =>
+        {
+            var physicsWorld = sp.GetRequiredService<IPhysicsWorld>();
+            return new ChainBot(physicsWorld, HexSize);
+        });
+
         services.AddSingleton<IHexGridManager>(sp =>
         {
             var physicsWorld = sp.GetRequiredService<IPhysicsWorld>();
             return new HexGridManager(physicsWorld, HexSize);
         });
+
         services.AddSingleton<IInputHandler, InputHandler>();
 
         // Register the game

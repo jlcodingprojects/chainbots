@@ -1,4 +1,3 @@
-using Chainbots.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -12,11 +11,13 @@ public class TextureStore
 
     private Color[] HexagonData { get; }
     private Color[] SquareData { get; }
+    private Color[] TriangleData { get; }
 
     public TextureStore()
     {
         HexagonData = TextureFactory.CreateHexagonTexture(128);
         SquareData = TextureFactory.CreateSquareTexture(128);
+        TriangleData = TextureFactory.CreateTriangleTexture(64);
     }
 
 
@@ -27,6 +28,9 @@ public class TextureStore
 
         Square = new Texture2D(service.GraphicsDevice, 128, 128);
         Square.SetData(SquareData);
+
+        Triangle = new Texture2D(service.GraphicsDevice, 128, 128);
+        Triangle.SetData(TriangleData);
     }
 }
 

@@ -1,5 +1,8 @@
 # tasks for me
 
+## readme
+- Add AI usage statement
+
 ## Chainbots
 - Render chainbot cells (triangles)
 - Add chainbot cell joints (magnetic corner joints, magnetic face actuator type joints?)

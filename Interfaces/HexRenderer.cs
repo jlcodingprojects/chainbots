@@ -84,6 +84,27 @@ public class HexRenderer : IHexRenderer
         );
     }
 
+    public void DrawTriangleFilledAtWorld(SpriteBatch spriteBatch, Vector2 worldPos, Color color)
+    {
+        Vector2 screenPos = _camera.WorldToScreen(worldPos);
+        float screenRadius = (_hexSize * 0.5f) * _pixelsPerMeter;
+
+        Vector2 origin = new Vector2(_textureStore.Triangle.Width / 2f, _textureStore.Triangle.Height / 2f);
+        float scale = (screenRadius * 2f) / _textureStore.Triangle.Width;
+
+        spriteBatch.Draw(
+            _textureStore.Triangle,
+            screenPos,
+            null,
+            color,
+            0f,
+            origin,
+            scale,
+            SpriteEffects.None,
+            0f
+        );
+    }
+
     private void DrawLine(SpriteBatch spriteBatch, Vector2 start, Vector2 end, Color color, float thickness)
     {
         Vector2 edge = end - start;

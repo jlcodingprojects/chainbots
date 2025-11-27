@@ -32,7 +32,7 @@ public static class TextureFactory
             for (int x = 0; x < textureSize; x++)
             {
                 Vector2 point = new Vector2(x + 0.5f, y + 0.5f);
-                if (IsPointInHexagon(point, vertices))
+                if (IsPointInPolygon(point, vertices))
                 {
                     data[y * textureSize + x] = Color.White;
                 }
@@ -42,7 +42,46 @@ public static class TextureFactory
         return data;
     }
 
-    private static bool IsPointInHexagon(Vector2 point, Vector2[] vertices)
+    public static Color[] CreateTriangleTexture(int size)
+    {
+        int textureSize = size * 2;
+        Color[] data = new Color[textureSize * textureSize];
+
+        // Clear background
+        for (int i = 0; i < data.Length; i++)
+            data[i] = Color.Transparent;
+
+        Vector2 center = new Vector2(textureSize / 2f, textureSize / 2f);
+        float radius = size;
+
+        Vector2[] vertices = new Vector2[3];
+
+        float[] angles = { -90f, 150f, 30f };
+
+        for (int i = 0; i < 3; i++)
+        {
+            float rad = MathHelper.ToRadians(angles[i]);
+            vertices[i] = center + new Vector2(
+                radius * (float)Math.Cos(rad),
+                radius * (float)Math.Sin(rad)
+            );
+        }
+
+        for (int y = 0; y < textureSize; y++)
+        {
+            for (int x = 0; x < textureSize; x++)
+            {
+                Vector2 p = new Vector2(x + 0.5f, y + 0.5f);
+                if (IsPointInPolygon(p, vertices))
+                    data[y * textureSize + x] = Color.White;
+            }
+        }
+
+        return data;
+    }
+
+
+    private static bool IsPointInPolygon(Vector2 point, Vector2[] vertices)
     {
         bool inside = false;
         int j = vertices.Length - 1;

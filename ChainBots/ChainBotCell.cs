@@ -8,19 +8,45 @@ using System;
 
 namespace Chainbots.ChainBots;
 
+public enum Polarity
+{
+    Positive,
+    Negative,
+    Off,
+}
+
+public enum PointType
+{
+    Edge,
+    Vertex,
+}
+
+public struct CellState
+{
+    public Polarity V0;
+    public Polarity V1;
+    public Polarity V2;
+
+    public Polarity E0;
+    public Polarity E1;
+    public Polarity E2;
+}
+
 public class ChainBotCell
 {
-    private static int _nextId = 1;
-
+    private static int _nextId = 0;
     public int Id { get; }
     public HexCoordinate Coordinate { get; }
     public Body Body { get; private set; }
     public float Size { get; }
-    public Vector2 WorldPosition => Body.Position;
+
+    public CellState State { get; private set; }
+
+    //private 
 
     public static void ResetIds()
     {
-        _nextId = 1;
+        _nextId = 0;
     }
 
     public ChainBotCell(World world, HexCoordinate coordinate, float size)
@@ -31,7 +57,6 @@ public class ChainBotCell
 
         Vector2 position = coordinate.ToPixel(size);
 
-        // Create physics body for Material blocks
         Body = BodyFactory.CreateBody(world, position, 0f, BodyType.Dynamic);
 
         Body.Mass = 1.0f;
@@ -43,21 +68,23 @@ public class ChainBotCell
         // Create polygon shape
         var shape = new PolygonShape(vertices, 1f);
         var fixture = Body.CreateFixture(shape);
-        fixture.Friction = 0.5f;
-        fixture.Restitution = 0.3f;
+        fixture.Friction = 0.1f;
+        fixture.Restitution = 0.00f;
     }
 
     private Vertices CreateTriangleVerticies(float radius)
     {
-        var vertices = new Vertices(6);
+        var vertices = new Vertices(3);
 
-        // Flat-top triangle: vertices at 0°, 120°, 240°
+        float[] angles = { -90f, 150f, 30f };
+
         for (int i = 0; i < 3; i++)
         {
-            float angle = MathHelper.ToRadians(120 * i);
-            float x = radius * (float)Math.Cos(angle);
-            float y = radius * (float)Math.Sin(angle);
-            vertices.Add(new Vector2(x, y));
+            float rad = MathHelper.ToRadians(angles[i]);
+            vertices.Add(new Vector2(
+                radius * (float)Math.Cos(rad),
+                radius * (float)Math.Sin(rad)
+            ));
         }
 
         return vertices;
@@ -69,13 +96,9 @@ public class ChainBotCell
         Body.Rotation = rotation;
     }
 
-    public static HexBlock CreateAtPosition(World world, Vector2 position, float size, bool isStatic = false, float rotation = 0f)
+    public void SetState(CellState newState)
     {
-        // Create a temporary coordinate (will be overridden by precise position)
-        var tempCoord = HexCoordinate.FromPixel(position, size);
-        var block = new HexBlock(world, tempCoord, size, isStatic);
-        block.SetPrecisePosition(position, rotation);
-        return block;
+        State = newState;
     }
 }
 

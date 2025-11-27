@@ -3,6 +3,11 @@ using Microsoft.Xna.Framework;
 
 namespace Chainbots.Models;
 
+public struct HexSubCoordinate
+{
+    public int P { get; set; }
+}
+
 public struct HexCoordinate : IEquatable<HexCoordinate>
 {
     public int Q { get; }  // Column
